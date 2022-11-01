@@ -1,0 +1,38 @@
+main: com.cavetale.festival.FestivalPlugin
+
+name: Festival
+version: 0.1
+description: Create Festival Events
+api-version: 1.19
+
+author: StarTux
+website: https://github.com/StarTux/Festival
+
+depend: [Core, Mytems, Area, Resident, MagicMap, Poster]
+softdepend: []
+
+commands:
+
+  festival:
+    aliases: [fest]
+    description: Festival Command
+    permission: festival.festival
+    usage: |-
+      /fest
+
+  festivaladmin:
+    aliases: [festadm]
+    description: Admin Command
+    permission: festival.admin
+    usage: |-
+      /festadm
+
+permissions:
+
+  festival.festival:
+    description: Use /fest
+    default: op
+
+  festival.admin:
+    description: Use /festadm
+    default: op
