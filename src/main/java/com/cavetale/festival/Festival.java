@@ -5,12 +5,12 @@ import com.cavetale.area.struct.AreasFile;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
+import com.cavetale.festival.attraction.Music;
 import com.cavetale.festival.booth.Booth;
 import com.cavetale.festival.booth.DefaultBooth;
 import com.cavetale.festival.session.Session;
 import com.cavetale.festival.session.Sessions;
 import com.cavetale.resident.PluginSpawn;
-import com.cavetale.resident.ZoneType;
 import com.cavetale.resident.save.Loc;
 import java.io.File;
 import java.util.ArrayList;
@@ -29,8 +29,6 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import static com.cavetale.festival.FestivalPlugin.plugin;
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @Getter @RequiredArgsConstructor
 public final class Festival {
@@ -38,7 +36,7 @@ public final class Festival {
     // ctor
     protected final String worldName;
     protected final String areasFileName;
-    protected final ZoneType zoneType;
+    protected final FestivalTheme theme;
     protected final Function<String, Booth> boothFunction;
     protected final Consumer<Player> totalCompletionHandler;
     // data
@@ -98,7 +96,7 @@ public final class Festival {
             String name = entry.getKey();
             if (name.equals(TOTAL_COMPLETION)) {
                 Location location = entry.getValue().get(0).min.toCenterFloorLocation(world);
-                this.totalCompletionVillager = PluginSpawn.register(plugin(), zoneType, Loc.of(location));
+                this.totalCompletionVillager = PluginSpawn.register(plugin(), theme.getZoneType(), Loc.of(location));
                 this.totalCompletionVillager.setOnPlayerClick(this::clickTotalCompletionVillager);
                 this.totalCompletionVillager.setOnMobSpawning(mob -> mob.setCollidable(false));
                 continue;
@@ -158,7 +156,7 @@ public final class Festival {
     public void clickTotalCompletionVillager(Player player) {
         Session session = sessionOf(player);
         if (session.isTotallyCompleted()) {
-            player.sendMessage(text("You completed everything. Congratulations!", GOLD));
+            player.sendMessage(theme.format("You completed everything. Congratulations!"));
             return;
         }
         final int total = attractionsMap.size();
@@ -168,16 +166,15 @@ public final class Festival {
                 locked += 1;
             }
         }
-        if (locked >= total) {
+        if (total > 0 && locked >= total) {
             session.lockTotallyCompleted();
             session.save();
-            Attraction.perfect(player, true);
+            Music.TREASURE.melody.play(FestivalPlugin.getInstance(), player);
             totalCompletionHandler.accept(player);
         } else {
-            player.sendMessage(text("You completed " + locked + "/" + total + " games."
-                                    + " Please return when you completed everything!"
-                                    + " Use your Magic Map to locate more games.",
-                                    GOLD));
+            player.sendMessage(theme.format("You completed " + locked + "/" + total + " games."
+                                            + " Please return when you completed everything!"
+                                            + " Use your Magic Map to locate more games."));
         }
     }
 

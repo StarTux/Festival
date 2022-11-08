@@ -24,7 +24,9 @@ public interface Booth {
 
     void apply(Attraction attraction);
 
-    Component format(String txt);
+    default Component format(String txt) {
+        return getFestival().getTheme().format(txt);
+    }
 
     Festival getFestival();
 
@@ -37,6 +39,6 @@ public interface Booth {
     }
 
     default ZoneType getZoneType() {
-        return getFestival().getZoneType();
+        return getFestival().getTheme().getZoneType();
     }
 }

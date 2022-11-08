@@ -1,7 +1,7 @@
 package com.cavetale.festival;
 
 import com.cavetale.festival.attraction.Attraction;
-import com.cavetale.festival.booth.TwinGourds;
+import com.cavetale.festival.booth.TestingBooth;
 import com.cavetale.festival.gui.Gui;
 import java.io.File;
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public final class FestivalPlugin extends JavaPlugin {
     }
 
     public void loadFestivals() {
-        loadFestival(TwinGourds.FESTIVAL);
+        loadFestival(TestingBooth.FESTIVAL);
     }
 
     private void loadFestival(Festival festival) {

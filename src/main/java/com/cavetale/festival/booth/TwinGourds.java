@@ -1,25 +1,22 @@
 package com.cavetale.festival.booth;
 
 import com.cavetale.festival.Festival;
+import com.cavetale.festival.FestivalTheme;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.mytems.Mytems;
-import com.cavetale.resident.ZoneType;
 import java.util.List;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class TwinGourds implements Booth {
     public static final TwinGourds INSTANCE = new TwinGourds();
     public static final Festival FESTIVAL = new Festival("twin_gourds",
                                                          "Halloween",
-                                                         ZoneType.HALLOWEEN,
+                                                         FestivalTheme.HALLOWEEN,
                                                          s -> INSTANCE,
                                                          TwinGourds::onComplete);
 
@@ -47,17 +44,8 @@ public final class TwinGourds implements Booth {
     public void apply(Attraction attraction) { }
 
     @Override
-    public Component format(String txt) {
-        TextComponent.Builder builder = text();
-        for (int i = 0; i < txt.length(); i += 1) {
-            builder.append(text(txt.charAt(i), i % 2 == 0 ? GOLD : RED));
-        }
-        return builder.build();
-    }
-
-    @Override
     public Festival getFestival() {
-        return null;
+        return FESTIVAL;
     }
 
     @Override

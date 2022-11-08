@@ -62,7 +62,6 @@ import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
-import static net.kyori.adventure.text.format.TextDecoration.*;
 
 /**
  * Base class for all attractions.
@@ -125,7 +124,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         }
         if (npcVector != null) {
             Location location = npcVector.toCenterFloorLocation(world);
-            mainVillager = PluginSpawn.register(plugin, festival.getZoneType(), Loc.of(location));
+            mainVillager = PluginSpawn.register(plugin, festival.getTheme().getZoneType(), Loc.of(location));
             mainVillager.setOnPlayerClick(this::clickMainVillager);
             mainVillager.setOnMobSpawning(mob -> {
                     mob.setCollidable(false);
@@ -189,22 +188,14 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void victory(Player player) {
-        Component message = text("Complete", GOLD);
-        player.showTitle(Title.title(message, text("Good Job!", GOLD)));
+        Component message = booth.format("Complete");
+        player.showTitle(Title.title(message, booth.format("Good Job!")));
         player.sendMessage(message);
         Music.TREASURE.melody.play(FestivalPlugin.getInstance(), player);
     }
 
-    public static final void perfect(Player player, boolean withMusic) {
-        Component message = join(noSeparators(),
-                                 text("P", GOLD),
-                                 text("E", RED),
-                                 text("R", YELLOW),
-                                 text("F", GOLD),
-                                 text("E", RED),
-                                 text("C", YELLOW),
-                                 text("T", GOLD),
-                                 text("!", DARK_RED, BOLD));
+    protected final void perfect(Player player, boolean withMusic) {
+        Component message = booth.format("PERFECT!");
         player.showTitle(Title.title(message, empty()));
         player.sendMessage(message);
         if (withMusic) {
@@ -217,7 +208,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void countdown(Player player, int seconds) {
-        player.sendActionBar(text(seconds, GOLD));
+        player.sendActionBar(booth.format("" + seconds));
         List<Note.Tone> tones = List.of(Note.Tone.D, Note.Tone.A, Note.Tone.G);
         if ((int) seconds <= tones.size()) {
             player.playNote(player.getLocation(), Instrument.PLING, Note.natural(0, tones.get((int) seconds - 1)));
@@ -226,16 +217,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     protected final Component makeProgressComponent(int seconds, ComponentLike prefix, int has, int max) {
         return join(noSeparators(),
-                    text(Unicode.WATCH.string + seconds, GOLD),
-                    space(),
-                    prefix,
-                    text(has + "/" + max, DARK_RED));
+                    booth.format(Unicode.WATCH.string + seconds),
+                    space(), prefix, booth.format(has + "/" + max));
     }
 
     protected final Component makeProgressComponent(int seconds) {
-        return join(noSeparators(),
-                    text(Unicode.WATCH.string + seconds, GOLD),
-                    space());
+        return booth.format(Unicode.WATCH.string + seconds);
     }
 
     /**
@@ -512,11 +499,11 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                                       text("?"),
                                       newline(),
                                       (DefaultFont.START_BUTTON.component
-                                       .clickEvent(ClickEvent.runCommand("/hallow yes " + name))
+                                       .clickEvent(ClickEvent.runCommand("/fest yes " + name))
                                        .hoverEvent(HoverEvent.showText(text("Play this Game", GREEN)))),
                                       space(),
                                       (DefaultFont.CANCEL_BUTTON.component
-                                       .clickEvent(ClickEvent.runCommand("/hallow no " + name))
+                                       .clickEvent(ClickEvent.runCommand("/fest no " + name))
                                        .hoverEvent(HoverEvent.showText(text("Goodbye!", RED)))));
                 meta.setAuthor("Cavetale");
                 meta.title(text("Festival"));
