@@ -20,7 +20,7 @@ public final class FestivalPlugin extends JavaPlugin {
     protected final FestivalCommand festivalCommand = new FestivalCommand(this);
     protected final FestivalAdminCommand festivalAdminCommand = new FestivalAdminCommand(this);
     protected final EventListener eventListener = new EventListener(this);
-    protected final Map<String, Festival> festivalMap = new HashMap<>();
+    @Getter protected final Map<String, Festival> festivalMap = new HashMap<>();
     @Getter protected File attractionsFolder;
     @Getter protected File playersFolder;
 
@@ -76,26 +76,26 @@ public final class FestivalPlugin extends JavaPlugin {
         return instance;
     }
 
-    public Attraction getAttraction(World world, String attractionName) {
+    public Attraction<?> getAttraction(World world, String attractionName) {
         Festival festival = festivalMap.get(world.getName());
         if (festival == null) return null;
         return festival.getAttraction(attractionName);
     }
 
-    public Attraction getAttraction(Location location) {
+    public Attraction<?> getAttraction(Location location) {
         Festival festival = festivalMap.get(location.getWorld().getName());
         if (festival == null) return null;
         return festival.getAttraction(location);
     }
 
-    public List<Attraction> getAttractions(World world) {
+    public List<Attraction<?>> getAttractions(World world) {
         Festival festival = festivalMap.get(world.getName());
         if (festival == null) return List.of();
         return festival.getAttractions();
     }
 
-    public List<Attraction> getAllAttractions() {
-        List<Attraction> result = new ArrayList<>();
+    public List<Attraction<?>> getAllAttractions() {
+        List<Attraction<?>> result = new ArrayList<>();
         for (Festival festival : festivalMap.values()) {
             result.addAll(festival.getAttractions());
         }

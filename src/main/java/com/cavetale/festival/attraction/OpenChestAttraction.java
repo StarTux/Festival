@@ -7,9 +7,6 @@ import com.cavetale.festival.session.Session;
 import java.time.Duration;
 import java.util.HashSet;
 import java.util.Set;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.JoinConfiguration;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -17,6 +14,9 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class OpenChestAttraction extends Attraction<OpenChestAttraction.SaveTag> {
     protected static final Duration OPEN_TIME = Duration.ofSeconds(30);
@@ -30,9 +30,13 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
                 chestBlockSet.addAll(cuboid.enumerate());
             }
         }
-        this.displayName = Component.text("Chest Game", NamedTextColor.DARK_RED);
-        this.description = Component.text("Choose one of my chests and keep"
-                                          + " what you find inside!");
+        this.displayName = text("Chest Game", DARK_RED);
+        this.description = text("Choose one of my chests and keep"
+                                + " what you find inside!");
+        this.areaNames.add("chest");
+        if (this.chestBlockSet.isEmpty()) {
+            debugLine("No chest blocks");
+        }
     }
 
     @Override
@@ -135,10 +139,8 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
         int seconds = (int) ((timeout - now - 1L) / 1000L) + 1;
         if (seconds != secondsLeft) {
             secondsLeft = seconds;
-            player.sendActionBar(Component.join(JoinConfiguration.noSeparators(), new Component[] {
-                        Component.text(Unicode.WATCH.string + seconds, NamedTextColor.GOLD),
-                        Component.text(" Pick a chest!", NamedTextColor.WHITE),
-                    }));
+            player.sendActionBar(textOfChildren(text(Unicode.WATCH.string + seconds, GOLD),
+                                                text(" Pick a chest!", WHITE)));
             for (Vec3i vec : chestBlockSet) {
                 highlight(player, vec.toCenterLocation(player.getWorld()));
             }

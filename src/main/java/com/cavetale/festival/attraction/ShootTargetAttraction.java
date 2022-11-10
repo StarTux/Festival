@@ -17,9 +17,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -31,6 +28,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextDecoration.*;
 
 public final class ShootTargetAttraction extends Attraction<ShootTargetAttraction.SaveTag> {
     protected static final Duration SHOOT_TIME = Duration.ofSeconds(30);
@@ -66,8 +67,12 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
         this.targetBlocks = Set.copyOf(set);
         this.ghastAreas = List.copyOf(ghastList);
         this.ghastBlocks = Set.copyOf(ghastSet);
-        this.displayName = Component.text("Bull's Eye!", NamedTextColor.DARK_RED);
-        this.description = Component.text("Shoot all the target blocks and ghasts as they appear!");
+        this.displayName = text("Bull's Eye!", DARK_RED);
+        this.description = text("Shoot all the target blocks and ghasts as they appear!");
+        this.areaNames.add("target");
+        this.areaNames.add("ghast");
+        if (targetBlocks.isEmpty()) debugLine("No target blocks");
+        if (ghastBlocks.isEmpty()) debugLines.add(text("(No ghast blocks)", YELLOW));
     }
 
     @Override
@@ -244,11 +249,11 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
             }
             return null;
         }
-        Title title = Title.title(Component.empty(),
-                                  Component.text("Shoot!", NamedTextColor.GOLD, TextDecoration.ITALIC),
+        Title title = Title.title(empty(),
+                                  text("Shoot!", GOLD, ITALIC),
                                   Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO));
         player.showTitle(title);
-        player.sendMessage(Component.text("Shoot!", NamedTextColor.GOLD, TextDecoration.ITALIC));
+        player.sendMessage(text("Shoot!", GOLD, ITALIC));
         startingGun(player);
         return State.SHOOT;
     }
@@ -299,15 +304,15 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
         // Game's not over yet!
         progress(player);
         if (perfectRound) {
-            subtitle(player, Component.text("Perfect Round!", NamedTextColor.GOLD));
-            player.sendMessage(Component.text("Perfect Round!", NamedTextColor.GOLD));
+            subtitle(player, text("Perfect Round!", GOLD));
+            player.sendMessage(text("Perfect Round!", GOLD));
         } else {
             if (missed == 1) {
-                subtitle(player, Component.text("You missed one target", NamedTextColor.GOLD));
-                player.sendMessage(Component.text("You missed one target", NamedTextColor.GOLD));
+                subtitle(player, text("You missed one target", GOLD));
+                player.sendMessage(text("You missed one target", GOLD));
             } else {
-                subtitle(player, Component.text("You missed " + missed + " targets", NamedTextColor.GOLD));
-                player.sendMessage(Component.text("You missed " + missed + " targets", NamedTextColor.GOLD));
+                subtitle(player, text("You missed " + missed + " targets", GOLD));
+                player.sendMessage(text("You missed " + missed + " targets", GOLD));
             }
         }
         saveTag.currentRound += 1;

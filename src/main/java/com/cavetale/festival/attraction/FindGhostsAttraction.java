@@ -36,15 +36,21 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
 
     protected FindGhostsAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
+        this.displayName = booth.format("Ghostbusters");
+        this.description = text("Help! My house is haunted."
+                                + " I can't even see them but they are scary."
+                                + " Can you get rid of them all?");
         for (Area area : allAreas) {
             if ("ghost".equals(area.name)) {
                 ghostAreas.add(area.toCuboid());
             }
         }
-        this.displayName = booth.format("Ghostbusters");
-        this.description = text("Help! My house is haunted."
-                                + " I can't even see them but they are scary."
-                                + " Can you get rid of them all?");
+        this.areaNames.add("ghost");
+        if (ghostAreas.isEmpty()) {
+            debugLine("No ghost areas");
+        } else if (ghostAreas.size() < 7) {
+            debugLine("Fewer than 7 ghost areas");
+        }
     }
 
     @Override

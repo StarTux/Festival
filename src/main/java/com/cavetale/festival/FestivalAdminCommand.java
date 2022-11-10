@@ -1,10 +1,14 @@
 package com.cavetale.festival;
 
+import com.cavetale.area.struct.Area;
+import com.cavetale.area.struct.AreasFile;
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.core.command.CommandArgCompleter;
+import com.cavetale.core.command.CommandContext;
 import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.playercache.PlayerCache;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.attraction.Music;
@@ -15,6 +19,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.text;
@@ -27,9 +33,6 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     @Override
     protected void onEnable() {
-        rootNode.addChild("info").denyTabCompletion()
-            .description("Info Command")
-            .senderCaller(this::info);
         rootNode.addChild("reload").denyTabCompletion()
             .description("Reload areas")
             .senderCaller(this::reload);
@@ -48,6 +51,29 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             .description("Reset player session")
             .completers(CommandArgCompleter.PLAYER_CACHE)
             .playerCaller(this::sessionReset);
+        CommandNode attractionNode = rootNode.addChild("attraction")
+            .description("Attraction subcommands");
+        attractionNode.addChild("create").arguments("<type> <name>")
+            .completers(CommandArgCompleter.enumLowerList(AttractionType.class),
+                        CommandArgCompleter.supplyList(() -> {
+                                List<String> result = new ArrayList<>();
+                                for (Festival festival : plugin.getFestivalMap().values()) {
+                                    for (Attraction attraction : festival.getAttractionsMap().values()) {
+                                        result.add(attraction.getName());
+                                    }
+                                }
+                                return result;
+                            }))
+            .description("Create attraction")
+            .playerCaller(this::attractionCreate);
+        attractionNode.addChild("addarea").arguments("<area>")
+            .completers(this::completeAreaNames)
+            .description("Add attraction area")
+            .playerCaller(this::attractionAddArea);
+        attractionNode.addChild("removearea").arguments("<area>")
+            .completers(this::completePresentAreaNames)
+            .description("remove attraction area")
+            .playerCaller(this::attractionRemoveArea);
     }
 
     private int requireInt(String arg) {
@@ -56,10 +82,6 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         } catch (NumberFormatException nfe) {
             throw new CommandWarn("Number expected: " + arg);
         }
-    }
-
-    protected boolean info(CommandSender sender, String[] args) {
-        return false;
     }
 
     protected boolean reload(CommandSender sender, String[] args) {
@@ -125,6 +147,127 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         session.save();
         festival.sessions.clear(target.uuid);
         player.sendMessage(text("Session reset: " + target.getName(), YELLOW));
+        return true;
+    }
+
+    private boolean attractionCreate(Player player, String[] args) {
+        if (args.length != 2) return false;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("There is no festival here!");
+        Cuboid cuboid = Cuboid.requireSelectionOf(player);
+        for (Attraction attraction : festival.getAttractionsMap().values()) {
+            if (attraction.getMainArea().overlaps(cuboid)) {
+                throw new CommandWarn("Selection overlaps with attraction " + attraction.getName());
+            }
+        }
+        AttractionType type = CommandArgCompleter.requireEnum(AttractionType.class, args[0]);
+        String name = args[1];
+        if (festival.getAttractionsMap().containsKey(name)) {
+            throw new CommandWarn("Area already exists: " + name);
+        }
+        List<Area> areaList = new ArrayList<>();
+        areaList.add(new Area(cuboid.getMin(), cuboid.getMax(), type.name().toLowerCase(), null));
+        AreasFile areasFile = festival.loadAreasFile();
+        areasFile.getAreas().put(name, areaList);
+        areasFile.save(festival.getWorld(), festival.getAreasFileName());
+        plugin.clearFestivals();
+        plugin.loadFestivals();
+        player.sendMessage(text("Attraction created: " + type + ", " + name + ", " + cuboid, GREEN));
+        return true;
+    }
+
+    private List<String> completeAreaNames(CommandContext context, CommandNode node, String arg) {
+        if (!context.isPlayer()) return List.of();
+        Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
+        if (attraction == null) return List.of();
+        List<String> result = new ArrayList<>();
+        for (String name : attraction.getAreaNames()) {
+            if (name.contains(arg.toLowerCase())) result.add(name);
+        }
+        return result;
+    }
+
+    private List<String> completePresentAreaNames(CommandContext context, CommandNode node, String arg) {
+        if (!context.isPlayer()) return List.of();
+        Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
+        if (attraction == null) return List.of();
+        List<String> result = new ArrayList<>();
+        boolean first = false;
+        for (var area : attraction.getAllAreas()) {
+            if (first) {
+                first = true;
+                continue;
+            }
+            String name = area.getName();
+            if (area == null) continue;
+            if (name.contains(arg.toLowerCase())) result.add(name);
+        }
+        return result;
+    }
+
+    private boolean attractionAddArea(Player player, String[] args) {
+        if (args.length != 1) return false;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("There is no festival here!");
+        Cuboid cuboid = Cuboid.requireSelectionOf(player);
+        Attraction<?> attraction = festival.getAttraction(cuboid.getMin());
+        if (attraction == null) {
+            throw new CommandWarn("There is no attraction here");
+        }
+        if (!attraction.getMainArea().contains(cuboid)) {
+            throw new CommandWarn("Selection is not contained in main area: " + attraction.getName());
+        }
+        final String name = args[0];
+        if (!attraction.getAreaNames().contains(name)) {
+            throw new CommandWarn("Attraction does not require area named " + name + " (" + attraction.getType() + ")");
+        }
+        AreasFile areasFile = festival.loadAreasFile();
+        List<Area> areaList = areasFile.getAreas().get(attraction.getName());
+        assert areaList != null;
+        Area area = new Area(cuboid.getMin(), cuboid.getMax(), name, null);
+        areaList.add(area);
+        areasFile.save(festival.getWorld(), festival.getAreasFileName());
+        plugin.clearFestivals();
+        plugin.loadFestivals();
+        player.sendMessage(text("Area added: " + area, GREEN));
+        area.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.REDSTONE, loc,
+                                                                      1, 0.0, 0.0, 0.0, 0.0,
+                                                                      new Particle.DustOptions(Color.GREEN, 1.0f)));
+        return true;
+    }
+
+    private boolean attractionRemoveArea(Player player, String[] args) {
+        if (args.length != 1) return false;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("There is no festival here!");
+        Cuboid cuboid = Cuboid.requireSelectionOf(player);
+        Attraction<?> attraction = festival.getAttraction(cuboid.getMin());
+        if (attraction == null) {
+            throw new CommandWarn("There is no attraction here");
+        }
+        if (!attraction.getMainArea().contains(cuboid)) {
+            throw new CommandWarn("Selection is not contained in main area: " + attraction.getName());
+        }
+        final String name = args[0];
+        AreasFile areasFile = festival.loadAreasFile();
+        List<Area> areaList = areasFile.getAreas().get(attraction.getName());
+        assert areaList != null;
+        Area removedArea = null;
+        for (int i = areaList.size() - 1; i >= 0; i -= 1) {
+            Area area = areaList.get(i);
+            if (name.equals(area.getName())) {
+                removedArea = areaList.remove(i);
+                break;
+            }
+        }
+        if (removedArea == null) throw new CommandWarn("Area not found: " + name);
+        areasFile.save(festival.getWorld(), festival.getAreasFileName());
+        plugin.clearFestivals();
+        plugin.loadFestivals();
+        player.sendMessage(text("Area removed: " + removedArea, YELLOW));
+        removedArea.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.REDSTONE,
+                                                                             loc, 1, 0.0, 0.0, 0.0, 0.0,
+                                                                             new Particle.DustOptions(Color.RED, 1.0f)));
         return true;
     }
 }

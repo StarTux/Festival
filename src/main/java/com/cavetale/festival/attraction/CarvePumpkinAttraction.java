@@ -33,13 +33,17 @@ public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttract
 
     protected CarvePumpkinAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
+        this.displayName = booth.format("Pumpkin Carving");
+        this.description = text("It's pumpkin season. Let's turn them all into Jack o Lanterns!");
         for (Area area : allAreas) {
             if ("pumpkin".equals(area.name)) {
                 blockSet.addAll(area.enumerate());
             }
         }
-        this.displayName = booth.format("Pumpkin Carving");
-        this.description = text("It's pumpkin season. Let's turn them all into Jack o Lanterns!");
+        this.areaNames.add("pumpkin");
+        if (blockSet.isEmpty()) {
+            debugLine("No pumpkin blocks");
+        }
     }
 
     @Override

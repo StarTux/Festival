@@ -44,19 +44,26 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
 
     protected ZombieFightAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
+        this.displayName = booth.format("Zombie Defense");
+        this.description = text("Zombies are rising from the graves!"
+                                + " Please show them the meaning of trick or treat and"
+                                + " hit them all with an egg in the face!");
         Set<Vec3i> zombieBlockSet = new HashSet<>();
         Set<Vec3i> noZombieBlockSet = new HashSet<>();
         for (Area area : allAreas) {
-            if ("snowman".equals(area.name)) {
+            if ("zombie".equals(area.name)) {
                 zombieBlockSet.addAll(area.enumerate());
-            } else if ("nosnowman".equals(area.name)) {
+            } else if ("nozombie".equals(area.name)) {
                 noZombieBlockSet.addAll(area.enumerate());
             }
         }
         zombieBlocks.addAll(zombieBlockSet);
         zombieBlocks.removeAll(noZombieBlockSet);
-        this.displayName = booth.format("Zombie Defense");
-        this.description = text("Zombies are rising from the graves! Please show them the meaning of trick or treat and hit them all with an egg in the face!");
+        this.areaNames.add("zombie");
+        this.areaNames.add("nozombie");
+        if (zombieBlocks.isEmpty()) {
+            debugLine("No zombie blocks");
+        }
     }
 
     @Override

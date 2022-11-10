@@ -20,6 +20,7 @@ import org.bukkit.entity.GlowItemFrame;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import static net.kyori.adventure.text.Component.text;
 
 public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag> {
     private Poster poster; // set by booth!
@@ -32,6 +33,8 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
 
     protected PosterAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
+        this.displayName = booth.format("Picture Puzzle");
+        this.description = text("Can you unscramble my painting?");
         for (Area area : allAreas) {
             if ("block".equals(area.name)) {
                 posterBlock = area.min;
@@ -40,10 +43,8 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
             }
         }
         if (posterBlock == null || posterFace == null) {
-            throw new IllegalStateException("poster=" + posterBlock
-                                            + " face=" + posterFace);
-        }
-        if (posterFace.x > posterBlock.x) {
+            debugLine("Poster block or face missing");
+        } else if (posterFace.x > posterBlock.x) {
             face = BlockFace.EAST;
             right = BlockFace.NORTH;
         } else if (posterFace.x < posterBlock.x) {
@@ -56,9 +57,11 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
             face = BlockFace.NORTH;
             right = BlockFace.WEST;
         } else {
-            throw new IllegalStateException("poster=" + posterBlock
-                                            + " face=" + posterFace);
+            debugLine("Poster face not aligned right");
         }
+        this.areaNames.add("block");
+        this.areaNames.add("face");
+        setPoster("PumpkinShinePoster");
     }
 
     @Override

@@ -57,6 +57,11 @@ public final class SnowballFightAttraction extends Attraction<SnowballFightAttra
         this.displayName = booth.format("Snowball Fight");
         this.description = text("These golems think they are undefeatable."
                                 + " Please teach them a lesson for me!");
+        this.areaNames.add("snowman");
+        this.areaNames.add("nosnowman");
+        if (this.snowmanBlocks.isEmpty()) {
+            debugLine("No snowman blocks");
+        }
     }
 
     @Override

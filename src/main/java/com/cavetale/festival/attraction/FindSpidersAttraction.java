@@ -13,8 +13,6 @@ import java.util.List;
 import java.util.Set;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -31,6 +29,8 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.metadata.FixedMetadataValue;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class FindSpidersAttraction extends Attraction<FindSpidersAttraction.SaveTag> {
     @Setter protected Duration searchTime = Duration.ofSeconds(40);
@@ -48,10 +48,14 @@ public final class FindSpidersAttraction extends Attraction<FindSpidersAttractio
             }
         }
         this.possibleSpiderBlocks = Set.copyOf(spiderSet);
-        this.displayName = Component.text("Spider Hunt", NamedTextColor.DARK_RED);
-        this.description = Component.text("My place is lousy with spiders."
-                                          + " They come out one by one and I can't sleep because they are noisy!"
-                                          + " Please find them all.");
+        this.displayName = text("Spider Hunt", DARK_RED);
+        this.description = text("My place is lousy with spiders."
+                                + " They come out one by one and I can't sleep because they are noisy!"
+                                + " Please find them all.");
+        this.areaNames.add("spider");
+        if (this.possibleSpiderBlocks.isEmpty()) {
+            debugLine("No spider blocks");
+        }
     }
 
     @Override

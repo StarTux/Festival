@@ -71,6 +71,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final FestivalPlugin plugin;
     protected final Festival festival;
+    protected final AttractionType type;
     protected final World world;
     protected final String name;
     protected final List<Area> allAreas;
@@ -87,6 +88,8 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected Component displayName = empty();
     protected Component description = empty();
     protected final Booth booth;
+    protected final List<Component> debugLines = new ArrayList<>();
+    protected final List<String> areaNames = new ArrayList<>();
 
     public static Attraction of(final Festival festival,
                                 @NonNull final String name,
@@ -99,7 +102,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             ? booth.getType()
             : AttractionType.forName(typeName);
         if (attractionType == null) return null;
-        Attraction result =  attractionType.make(new AttractionConfiguration(festival, name, areaList, booth));
+        Attraction result = attractionType.make(new AttractionConfiguration(festival, attractionType, name, areaList, booth));
         if (booth.getDisplayName() != null) result.displayName = booth.getDisplayName();
         if (booth.getDescription() != null) result.description = booth.getDescription();
         //if (booth.getReward() != null) result.firstCompletionReward = booth.getReward().createItemStack();
@@ -110,6 +113,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected Attraction(final AttractionConfiguration config, final Class<T> saveTagClass, final Supplier<T> saveTagSupplier) {
         this.plugin = plugin();
         this.festival = config.festival;
+        this.type = config.type;
         this.world = festival.getWorld();
         this.name = config.name;
         this.allAreas = config.areaList;
@@ -119,10 +123,18 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         this.saveTagSupplier = saveTagSupplier;
         for (Area area : allAreas) {
             if ("npc".equals(area.name)) {
+                if (area.getVolume() != 1) {
+                    debugLine("NPC vector bigger than 1");
+                }
+                if (npcVector != null) {
+                    debugLine("Duplicate area: NPC");
+                }
                 npcVector = area.min;
             }
         }
-        if (npcVector != null) {
+        if (npcVector == null) {
+            debugLine("Area missing: NPC");
+        } else {
             Location location = npcVector.toCenterFloorLocation(world);
             mainVillager = PluginSpawn.register(plugin, festival.getTheme().getZoneType(), Loc.of(location));
             mainVillager.setOnPlayerClick(this::clickMainVillager);
@@ -131,10 +143,19 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                 });
         }
         this.booth = config.booth;
+        this.areaNames.add("npc");
+    }
+
+    protected final void debugLine(String txt) {
+        debugLines.add(text(txt, RED));
     }
 
     public final boolean isInArea(Location location) {
         return world.equals(location.getWorld()) && mainArea.contains(location);
+    }
+
+    public final boolean isInArea(Vec3i vector) {
+        return mainArea.contains(vector);
     }
 
     public final void load() {
@@ -495,7 +516,8 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                                       newline(),
                                       newline(),
                                       text("Play game for "),
-                                      ItemKinds.chatDescription(booth.getEntryFee()),
+                                      newline(),
+                                      DefaultFont.bookmarked(ItemKinds.chatDescription(booth.getEntryFee())),
                                       text("?"),
                                       newline(),
                                       (DefaultFont.START_BUTTON.component

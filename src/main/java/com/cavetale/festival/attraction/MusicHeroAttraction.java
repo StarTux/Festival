@@ -19,8 +19,6 @@ import java.util.List;
 import java.util.Objects;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.JoinConfiguration;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Material;
 import org.bukkit.Note.Tone;
@@ -30,6 +28,14 @@ import org.bukkit.event.Event;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.join;
+import static net.kyori.adventure.text.Component.newline;
+import static net.kyori.adventure.text.Component.space;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
+import static net.kyori.adventure.text.JoinConfiguration.separator;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.SaveTag> {
     protected static final Duration WARMUP_TIME = Duration.ofSeconds(30);
@@ -42,13 +48,23 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
         super(config, SaveTag.class, SaveTag::new);
         for (Area area : allAreas) {
             if ("lectern".equals(area.name)) {
+                if (lecternBlock != null) {
+                    debugLine("Dupcliate lectern block");
+                }
+                if (area.getVolume() != 1) {
+                    debugLine("Lectern area bigger than 1");
+                }
                 lecternBlock = area.min;
             }
         }
-        this.displayName = Component.text("Music Hero", NamedTextColor.RED);
-        this.description = Component.text("Play the notes while they're on your instrument."
-                                          + " Don't miss a single note for the prize!");
+        this.displayName = text("Music Hero", RED);
+        this.description = text("Play the notes while they're on your instrument."
+                                + " Don't miss a single note for the prize!");
         this.doesRequireInstrument = true;
+        this.areaNames.add("lectern");
+        if (lecternBlock == null) {
+            debugLine("No lectern block");
+        }
     }
 
     @Override
@@ -136,8 +152,8 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
             prepareReward(player, true);
         } else {
             player.closeInventory();
-            player.showTitle(Title.title(Component.text(finalScore + "/" + maximumScore, NamedTextColor.DARK_RED),
-                                         Component.text("Try again!", NamedTextColor.DARK_RED)));
+            player.showTitle(Title.title(text(finalScore + "/" + maximumScore, DARK_RED),
+                                         text("Try again!", DARK_RED)));
             festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(20));
         }
         changeState(State.IDLE);
@@ -153,12 +169,10 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
         int seconds = (int) ((timeout - now - 1) / 1000L) + 1;
         if (seconds != secondsLeft) {
             secondsLeft = seconds;
-            player.sendActionBar(Component.join(JoinConfiguration.noSeparators(), new Component[] {
-                        Component.text(Unicode.WATCH.string + seconds, NamedTextColor.GOLD),
-                        Component.space(),
-                        Mytems.ANGELIC_HARP.component,
-                        Component.text("Open your Instrument", NamedTextColor.WHITE),
-                    }));
+            player.sendActionBar(textOfChildren(text(Unicode.WATCH.string + seconds, GOLD),
+                                                space(),
+                                                Mytems.ANGELIC_HARP.component,
+                                                text("Open your Instrument", WHITE)));
         }
         return null;
     }
@@ -185,16 +199,15 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
         for (Beat beat : music.melody.getBeats()) {
             if (beat.ticks == 0 || beat.isPause()) continue;
             if (beat.instrument != null) continue;
-            notes.add(Component.text(beat.toString(), NamedTextColor.BLUE));
+            notes.add(text(beat.toString(), BLUE));
         }
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         book.editMeta(m -> {
                 BookMeta meta = (BookMeta) m;
-                meta.pages(List.of(Component.join(JoinConfiguration.separator(Component.newline()), new Component[] {
-                                Component.join(JoinConfiguration.separator(Component.space()), keys),
-                                Component.empty(),
-                                Component.join(JoinConfiguration.separator(Component.space()), notes),
-                            })));
+                meta.pages(List.of(join(separator(newline()),
+                                        join(separator(space()), keys),
+                                        empty(),
+                                        join(separator(space()), notes))));
                 meta.setAuthor("Cavetale");
                 meta.title(displayName);
             });

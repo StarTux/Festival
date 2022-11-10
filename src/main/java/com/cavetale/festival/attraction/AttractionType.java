@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public enum AttractionType {
+    DUMMY(DummyAttraction.class, DummyAttraction::new),
     REPEAT_MELODY(RepeatMelodyAttraction.class, RepeatMelodyAttraction::new),
     SHOOT_TARGET(ShootTargetAttraction.class, ShootTargetAttraction::new),
     FIND_SPIDERS(FindSpidersAttraction.class, FindSpidersAttraction::new),
@@ -26,7 +27,7 @@ public enum AttractionType {
         for (AttractionType it : AttractionType.values()) {
             if (name.toUpperCase().equals(it.name())) return it;
         }
-        return null;
+        return DUMMY;
     }
 
     public static AttractionType of(Attraction attraction) {

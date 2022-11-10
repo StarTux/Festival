@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -19,6 +18,9 @@ import org.bukkit.SoundCategory;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import static net.kyori.adventure.text.Component.empty;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
     protected static final Duration COUNTDOWN_TIME = Duration.ofSeconds(3);
@@ -37,13 +39,28 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
             } else if ("player".equals(area.name)) {
                 playerCheckpointList.add(area.toCuboid());
             } else if ("start".equals(area.name)) {
+                if (startArea != null) {
+                    debugLine("Duplicate area: start");
+                }
                 startArea = area.toCuboid();
             }
         }
-        this.displayName = Component.text("Race Me", NamedTextColor.RED);
-        this.description = Component.text("Race me once around the house?"
-                                          + " I bet you can't beat me,"
-                                          + " I'm super fast!");
+        this.displayName = text("Race Me", RED);
+        this.description = text("Race me once around the house?"
+                                + " I bet you can't beat me,"
+                                + " I'm super fast!");
+        this.areaNames.add("ai");
+        this.areaNames.add("player");
+        this.areaNames.add("start");
+        if (this.aiCheckpointList.isEmpty()) {
+            debugLine("No AI checkpoints");
+        }
+        if (this.playerCheckpointList.isEmpty()) {
+            debugLine("No player checkpoints");
+        }
+        if (Cuboid.ZERO.equals(startArea)) {
+            debugLine("No start area");
+        }
     }
 
     @Override
@@ -73,9 +90,9 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
 
     protected State tickCountdown(Player player) {
         if (!startArea.contains(player.getLocation())) {
-            Component message = Component.text("You left the starting area!", NamedTextColor.DARK_RED);
+            Component message = text("You left the starting area!", DARK_RED);
             player.sendMessage(message);
-            player.showTitle(Title.title(Component.text("No cheating!", NamedTextColor.DARK_RED),
+            player.showTitle(Title.title(text("No cheating!", DARK_RED),
                                          message));
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, SoundCategory.MASTER, 2.0f, 0.5f);
             return State.IDLE;
@@ -84,8 +101,8 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         long time = now - saveTag.countdownStarted;
         long timeLeft = COUNTDOWN_TIME.toMillis() - time;
         if (timeLeft <= 0) {
-            player.showTitle(Title.title(Component.text("GO!", NamedTextColor.GOLD),
-                                         Component.empty(),
+            player.showTitle(Title.title(text("GO!", GOLD),
+                                         empty(),
                                          Title.Times.times(Duration.ZERO, Duration.ofMillis(500L), Duration.ZERO)));
             startingGun(player);
             return State.RACE;
@@ -93,8 +110,8 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         int seconds = (int) ((timeLeft - 1L) / 1000L + 1L);
         if (seconds != countdownSeconds) {
             countdownSeconds = seconds;
-            player.showTitle(Title.title(Component.text(seconds, NamedTextColor.GOLD),
-                                         Component.text("Get Ready", NamedTextColor.GOLD),
+            player.showTitle(Title.title(text(seconds, GOLD),
+                                         text("Get Ready", GOLD),
                                          Title.Times.times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)));
             countdown(player, seconds);
         }

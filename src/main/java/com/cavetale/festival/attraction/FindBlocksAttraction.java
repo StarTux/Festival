@@ -12,8 +12,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import net.kyori.adventure.bossbar.BossBar;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Axis;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -31,6 +29,8 @@ import org.bukkit.block.data.type.Slab;
 import org.bukkit.block.data.type.Stairs;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.SaveTag> {
     protected static final List<BlockFace> HORIZONTAL_FACES = List.of(BlockFace.NORTH,
@@ -49,10 +49,14 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
                 originBlockSet.addAll(area.enumerate());
             }
         }
-        this.displayName = Component.text("Hidden Blocks", NamedTextColor.DARK_RED);
-        this.description = Component.text("My place is haunted!"
-                                          + " a ghost keeps placing and rearranging blocks."
-                                          + " Can you find them all?");
+        this.displayName = text("Hidden Blocks", DARK_RED);
+        this.description = text("My place is haunted!"
+                                + " a ghost keeps placing and rearranging blocks."
+                                + " Can you find them all?");
+        this.areaNames.add("blocks");
+        if (this.originBlockSet.isEmpty()) {
+            debugLine("No block areas");
+        }
     }
 
     @Override

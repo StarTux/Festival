@@ -35,6 +35,13 @@ public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag>
         this.displayName = booth.format("Memory Game");
         this.description = text("Find matching pairs of blocks. Reveal 2 blocks at a time.");
         this.playTime = Duration.ofSeconds(memoryBlocks.size() * 5);
+        this.areaNames.add("block");
+        if (memoryBlocks.isEmpty()) {
+            debugLine("No memory blocks");
+        }
+        if (memoryBlocks.size() % 2 != 0) {
+            debugLine("Memory blocks not even");
+        }
     }
 
     @Override

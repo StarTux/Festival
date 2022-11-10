@@ -1,6 +1,7 @@
 package com.cavetale.festival;
 
 import com.cavetale.core.event.hud.PlayerHudEvent;
+import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
@@ -16,6 +17,7 @@ import com.cavetale.mytems.event.music.PlayerOpenMusicalInstrumentEvent;
 import com.destroystokyo.paper.event.entity.ThrownEggHatchEvent;
 import lombok.RequiredArgsConstructor;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -186,9 +188,13 @@ public final class EventListener implements Listener {
 
     @EventHandler
     protected void onPlayerHud(PlayerHudEvent event) {
-        Attraction attraction = plugin.getAttraction(event.getPlayer().getLocation());
-        if (attraction != null && attraction.isCurrentPlayer(event.getPlayer())) {
+        Attraction<?> attraction = plugin.getAttraction(event.getPlayer().getLocation());
+        if (attraction == null) return;
+        if (attraction.isCurrentPlayer(event.getPlayer())) {
             attraction.onPlayerHud(event);
+        }
+        if (event.getPlayer().getGameMode() == GameMode.CREATIVE && !attraction.getDebugLines().isEmpty()) {
+            event.sidebar(PlayerHudPriority.LOW, attraction.getDebugLines());
         }
     }
 }

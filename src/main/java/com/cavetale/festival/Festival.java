@@ -3,6 +3,7 @@ package com.cavetale.festival;
 import com.cavetale.area.struct.Area;
 import com.cavetale.area.struct.AreasFile;
 import com.cavetale.core.playercache.PlayerCache;
+import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.attraction.Music;
@@ -40,14 +41,14 @@ public final class Festival {
     protected final Function<String, Booth> boothFunction;
     protected final Consumer<Player> totalCompletionHandler;
     // data
-    protected final Map<String, Attraction> attractionsMap = new HashMap<>();
+    protected final Map<String, Attraction<?>> attractionsMap = new HashMap<>();
     protected final Sessions sessions = new Sessions(this);
     protected PluginSpawn totalCompletionVillager;
     protected File saveFolder;
     protected File playersFolder;
 
     public void clear() {
-        for (Attraction attraction : attractionsMap.values()) {
+        for (Attraction<?> attraction : attractionsMap.values()) {
             try {
                 attraction.save();
                 attraction.disable();
@@ -80,6 +81,10 @@ public final class Festival {
         plugin().getLogger().info("[" + worldName + "] " + msg);
     }
 
+    public AreasFile loadAreasFile() {
+        return AreasFile.load(getWorld(), areasFileName);
+    }
+
     public void load() {
         World world = getWorld();
         if (world == null) {
@@ -90,7 +95,7 @@ public final class Festival {
         saveFolder.mkdirs();
         playersFolder = new File(saveFolder, "players");
         playersFolder.mkdirs();
-        AreasFile areasFile = AreasFile.load(world, areasFileName);
+        AreasFile areasFile = loadAreasFile();
         if (areasFile == null) throw new IllegalStateException("Areas file not found: " + worldName + "/" + areasFileName);
         for (Map.Entry<String, List<Area>> entry : areasFile.areas.entrySet()) {
             String name = entry.getKey();
@@ -106,7 +111,7 @@ public final class Festival {
                 logWarn(name + ": No Booth found!");
             }
             List<Area> areaList = entry.getValue();
-            Attraction attraction = Attraction.of(this, name, areaList, booth != null ? booth : new DefaultBooth());
+            Attraction<?> attraction = Attraction.of(this, name, areaList, booth != null ? booth : new DefaultBooth());
             if (attraction == null) {
                 logWarn(name + ": No Attraction!");
             }
@@ -121,7 +126,7 @@ public final class Festival {
         }
         Map<AttractionType, Integer> counts = new EnumMap<>(AttractionType.class);
         for (AttractionType type : AttractionType.values()) counts.put(type, 0);
-        for (Attraction attraction : attractionsMap.values()) {
+        for (Attraction<?> attraction : attractionsMap.values()) {
             AttractionType type = AttractionType.of(attraction);
             counts.put(type, counts.get(type) + 1);
         }
@@ -134,7 +139,7 @@ public final class Festival {
     }
 
     public void tick() {
-        for (Attraction attraction : new ArrayList<>(attractionsMap.values())) {
+        for (Attraction<?> attraction : new ArrayList<>(attractionsMap.values())) {
             if (attraction.isPlaying()) {
                 try {
                     attraction.tick();
@@ -146,7 +151,7 @@ public final class Festival {
     }
 
     public <T extends Attraction> void applyActiveAttraction(Class<T> type, Consumer<T> consumer) {
-        for (Attraction attraction : attractionsMap.values()) {
+        for (Attraction<?> attraction : attractionsMap.values()) {
             if (attraction.isPlaying() && type.isInstance(attraction)) {
                 consumer.accept(type.cast(attraction));
             }
@@ -161,7 +166,7 @@ public final class Festival {
         }
         final int total = attractionsMap.size();
         int locked = 0;
-        for (Attraction attraction : attractionsMap.values()) {
+        for (Attraction<?> attraction : attractionsMap.values()) {
             if (session.isUniqueLocked(attraction)) {
                 locked += 1;
             }
@@ -178,17 +183,24 @@ public final class Festival {
         }
     }
 
-    public Attraction getAttraction(String name) {
+    public Attraction<?> getAttraction(String name) {
         return attractionsMap.get(name);
     }
 
-    public List<Attraction> getAttractions() {
+    public List<Attraction<?>> getAttractions() {
         return List.copyOf(attractionsMap.values());
     }
 
-    public Attraction getAttraction(Location location) {
-        for (Attraction attraction : attractionsMap.values()) {
+    public Attraction<?> getAttraction(Location location) {
+        for (Attraction<?> attraction : attractionsMap.values()) {
             if (attraction.isInArea(location)) return attraction;
+        }
+        return null;
+    }
+
+    public Attraction<?> getAttraction(Vec3i vector) {
+        for (Attraction<?> attraction : attractionsMap.values()) {
+            if (attraction.isInArea(vector)) return attraction;
         }
         return null;
     }
