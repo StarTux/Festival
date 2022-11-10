@@ -39,7 +39,7 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
             } else if ("player".equals(area.name)) {
                 playerCheckpointList.add(area.toCuboid());
             } else if ("start".equals(area.name)) {
-                if (startArea != null) {
+                if (!Cuboid.ZERO.equals(startArea)) {
                     debugLine("Duplicate area: start");
                 }
                 startArea = area.toCuboid();
