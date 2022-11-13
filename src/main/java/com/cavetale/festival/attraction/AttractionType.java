@@ -18,6 +18,7 @@ public enum AttractionType {
     MEMORY(MemoryAttraction.class, MemoryAttraction::new),
     FIND_GHOSTS(FindGhostsAttraction.class, FindGhostsAttraction::new),
     CARVE_PUMPKIN(CarvePumpkinAttraction.class, CarvePumpkinAttraction::new),
+    PET_PILE(PetPileAttraction.class, PetPileAttraction::new),
     ;
 
     public final Class<? extends Attraction> type;
