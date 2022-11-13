@@ -129,14 +129,19 @@ public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag>
     private final List<Material> hiddenMaterials = List
         .of(Material.PUMPKIN,
             Material.MELON,
-            Material.DIAMOND_ORE,
-            Material.GOLD_ORE,
-            Material.IRON_ORE,
-            Material.COPPER_ORE,
-            Material.GOLD_BLOCK,
+            Material.COAL_BLOCK,
+            Material.COPPER_BLOCK,
+            Material.DIAMOND_BLOCK,
             Material.EMERALD_BLOCK,
+            Material.GOLD_BLOCK,
+            Material.LAPIS_BLOCK,
             Material.REDSTONE_BLOCK,
-            Material.DIAMOND_BLOCK);
+            Material.RAW_GOLD_BLOCK,
+            Material.AMETHYST_BLOCK,
+            Material.STRIPPED_OAK_WOOD,
+            Material.STRIPPED_CRIMSON_HYPHAE,
+            Material.STRIPPED_WARPED_HYPHAE,
+            Material.MAGMA_BLOCK);
 
     private void generateBlocks() {
         List<Material> hidden = new ArrayList<>();
