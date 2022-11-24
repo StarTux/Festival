@@ -73,11 +73,11 @@ public final class Festival {
         return boothFunction.apply(name);
     }
 
-    private void logWarn(String msg) {
+    public void logWarn(String msg) {
         plugin().getLogger().warning("[" + worldName + "] " + msg);
     }
 
-    private void logInfo(String msg) {
+    public void logInfo(String msg) {
         plugin().getLogger().info("[" + worldName + "] " + msg);
     }
 

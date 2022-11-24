@@ -67,7 +67,7 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
         this.targetBlocks = Set.copyOf(set);
         this.ghastAreas = List.copyOf(ghastList);
         this.ghastBlocks = Set.copyOf(ghastSet);
-        this.displayName = text("Bull's Eye!", DARK_RED);
+        this.displayName = booth.format("Bull's Eye!");
         this.description = text("Shoot all the target blocks and ghasts as they appear!");
         this.areaNames.add("target");
         this.areaNames.add("ghast");
@@ -127,9 +127,7 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
         newState.enter(this);
     }
 
-    /**
-     * Called by EventListener.
-     */
+    @Override
     public void onProjectileHit(ProjectileHitEvent event) {
         if (saveTag.state != State.SHOOT) return;
         Projectile projectile = event.getEntity();

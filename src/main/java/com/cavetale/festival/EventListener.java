@@ -6,7 +6,6 @@ import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.MusicHeroAttraction;
-import com.cavetale.festival.attraction.ShootTargetAttraction;
 import com.cavetale.festival.session.Session;
 import com.cavetale.magicmap.event.MagicMapCursorEvent;
 import com.cavetale.magicmap.util.Cursors;
@@ -77,9 +76,7 @@ public final class EventListener implements Listener {
         Projectile entity = event.getEntity();
         for (Attraction attraction : plugin.getAttractions(entity.getWorld())) {
             if (!attraction.isInArea(entity.getLocation())) continue;
-            if (attraction instanceof ShootTargetAttraction) {
-                ((ShootTargetAttraction) attraction).onProjectileHit(event);
-            }
+            attraction.onProjectileHit(event);
         }
     }
 
@@ -190,9 +187,7 @@ public final class EventListener implements Listener {
     protected void onPlayerHud(PlayerHudEvent event) {
         Attraction<?> attraction = plugin.getAttraction(event.getPlayer().getLocation());
         if (attraction == null) return;
-        if (attraction.isCurrentPlayer(event.getPlayer())) {
-            attraction.onPlayerHud(event);
-        }
+        attraction.onPlayerHud(event);
         if (event.getPlayer().getGameMode() == GameMode.CREATIVE && !attraction.getDebugLines().isEmpty()) {
             event.sidebar(PlayerHudPriority.LOW, attraction.getDebugLines());
         }

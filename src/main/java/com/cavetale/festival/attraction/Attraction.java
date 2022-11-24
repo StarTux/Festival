@@ -49,6 +49,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -148,6 +149,14 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     protected final void debugLine(String txt) {
         debugLines.add(text(txt, RED));
+    }
+
+    protected final void logWarn(String msg) {
+        festival.logWarn("[" + name + "] " + msg);
+    }
+
+    protected final void logInfo(String msg) {
+        festival.logInfo("[" + name + "] " + msg);
     }
 
     public final boolean isInArea(Location location) {
@@ -287,6 +296,8 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     public void onPlayerInteract(PlayerInteractEvent event) { }
 
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) { }
+
+    public void onProjectileHit(ProjectileHitEvent event) { }
 
     public final void onPlayerQuit(PlayerQuitEvent event) {
         if (isPlaying() && event.getPlayer().equals(getCurrentPlayer())) {
