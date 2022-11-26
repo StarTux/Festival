@@ -9,6 +9,7 @@ import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.core.struct.Cuboid;
+import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.attraction.Music;
@@ -66,6 +67,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
                             }))
             .description("Create attraction")
             .playerCaller(this::attractionCreate);
+        attractionNode.addChild("set").arguments("<type>")
+            .completers(CommandArgCompleter.enumLowerList(AttractionType.class))
+            .description("Set attraction of area")
+            .playerCaller(this::attractionSet);
         attractionNode.addChild("addarea").arguments("<area>")
             .completers(this::completeAreaNames)
             .description("Add attraction area")
@@ -173,6 +178,37 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         plugin.clearFestivals();
         plugin.loadFestivals();
         player.sendMessage(text("Attraction created: " + type + ", " + name + ", " + cuboid, GREEN));
+        return true;
+    }
+
+    private boolean attractionSet(Player player, String[] args) {
+        if (args.length != 1) return false;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("There is no festival here!");
+        String areaName = null;
+        List<Area> areaList = null;
+        AreasFile areasFile = festival.loadAreasFile();
+        final Vec3i playerVector = Vec3i.of(player.getLocation());
+        for (String name : areasFile.getAreas().keySet()) {
+            List<Area> list = areasFile.getAreas().get(name);
+            if (list.isEmpty()) continue;
+            if (list.get(0).contains(playerVector)) {
+                areaName = name;
+                areaList = list;
+                break;
+            }
+        }
+        if (areaName == null || areaList == null) {
+            throw new CommandWarn("There is no area list here: " + playerVector);
+        }
+        AttractionType type = CommandArgCompleter.requireEnum(AttractionType.class, args[0]);
+        Area mainArea = areaList.get(0);
+        String oldType = mainArea.getName();
+        areaList.set(0, mainArea.withName(type.name().toLowerCase()));
+        areasFile.save(festival.getWorld(), festival.getAreasFileName());
+        plugin.clearFestivals();
+        plugin.loadFestivals();
+        player.sendMessage(text("Attraction set: " + oldType + " => " + type + " in area " + areaName, GREEN));
         return true;
     }
 
