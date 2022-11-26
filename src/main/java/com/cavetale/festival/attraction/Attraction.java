@@ -1,6 +1,7 @@
 package com.cavetale.festival.attraction;
 
 import com.cavetale.area.struct.Area;
+import com.cavetale.core.connect.NetworkServer;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.item.PlayerReceiveItemsEvent;
 import com.cavetale.core.event.player.PluginPlayerEvent;
@@ -37,6 +38,7 @@ import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.GameMode;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -550,6 +552,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         if (!checkSomebodyPlaying(player)) return;
         if (doesRequireInstrument && !checkInstrument(player)) return;
         if (!takeEntryFee(player)) return;
+        if (NetworkServer.current() == NetworkServer.CREATIVE) {
+            player.setGameMode(GameMode.ADVENTURE);
+        }
         start(player);
     }
 
