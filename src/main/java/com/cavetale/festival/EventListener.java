@@ -187,7 +187,9 @@ public final class EventListener implements Listener {
     protected void onPlayerHud(PlayerHudEvent event) {
         Attraction<?> attraction = plugin.getAttraction(event.getPlayer().getLocation());
         if (attraction == null) return;
-        attraction.onPlayerHud(event);
+        if (attraction.isPlaying()) {
+            attraction.onPlayerHud(event);
+        }
         if (event.getPlayer().getGameMode() == GameMode.CREATIVE && !attraction.getDebugLines().isEmpty()) {
             event.sidebar(PlayerHudPriority.LOW, attraction.getDebugLines());
         }
