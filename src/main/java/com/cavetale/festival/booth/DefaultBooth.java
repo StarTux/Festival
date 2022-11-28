@@ -53,4 +53,9 @@ public final class DefaultBooth implements Booth {
     public List<List<ItemStack>> getPrizePool() {
         return List.of(List.of(new ItemStack(Material.DIAMOND)));
     }
+
+    @Override
+    public List<ItemStack> getBonusPrizePool() {
+        return List.of(new ItemStack(Material.DIAMOND));
+    }
 }

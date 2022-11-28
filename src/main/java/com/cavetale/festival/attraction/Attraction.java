@@ -315,12 +315,6 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         return item.clone();
     }
 
-    private static final List<ItemStack> CANDY = List
-        .of(Mytems.CANDY_CORN.createItemStack(),
-            Mytems.CHOCOLATE_BAR.createItemStack(),
-            Mytems.LOLLIPOP.createItemStack(),
-            Mytems.ORANGE_CANDY.createItemStack());
-
     /**
      * Give unique prize in a chest and update the session.
      */
@@ -329,11 +323,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         session.clearPrizeWaiting(this);
         session.lockUnique(this);
         session.save();
+        List<ItemStack> bonus = booth.getBonusPrizePool();
         giveInGui(player, booth.getFirstCompletionReward().clone(),
-                  booth.getEntryFee().clone(),
-                  new ItemStack(Material.DIAMOND),
-                  CANDY.get(random.nextInt(CANDY.size())).clone(),
-                  CANDY.get(random.nextInt(CANDY.size())).clone());
+                  bonus.get(random.nextInt(bonus.size())).clone(),
+                  bonus.get(random.nextInt(bonus.size())).clone(),
+                  bonus.get(random.nextInt(bonus.size())).clone(),
+                  bonus.get(random.nextInt(bonus.size())).clone());
     }
 
     /**
@@ -343,7 +338,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         Session session = festival.sessionOf(player);
         session.clearPrizeWaiting(this);
         session.save();
-        giveInGui(player, getRegularCompletionReward(player));
+        List<ItemStack> bonus = booth.getBonusPrizePool();
+        giveInGui(player, getRegularCompletionReward(player),
+                  bonus.get(random.nextInt(bonus.size())).clone(),
+                  bonus.get(random.nextInt(bonus.size())).clone(),
+                  bonus.get(random.nextInt(bonus.size())).clone(),
+                  bonus.get(random.nextInt(bonus.size())).clone());
     }
 
     /**

@@ -72,6 +72,16 @@ public final class TwinGourds implements Booth {
         return PRIZE_POOL;
     }
 
+    @Override
+    public List<ItemStack> getBonusPrizePool() {
+        return List.of(getEntryFee(),
+                       new ItemStack(Material.DIAMOND),
+                       Mytems.CANDY_CORN.createItemStack(),
+                       Mytems.CHOCOLATE_BAR.createItemStack(),
+                       Mytems.LOLLIPOP.createItemStack(),
+                       Mytems.ORANGE_CANDY.createItemStack());
+    }
+
     private static void onComplete(Player player) {
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kite member HalloweenComplete2022 " + player.getName());
     }

@@ -34,6 +34,12 @@ public interface Booth {
 
     List<List<ItemStack>> getPrizePool();
 
+    /**
+     * 4 items will be picked at random to be added as decoration
+     * around the main prize.
+     */
+    List<ItemStack> getBonusPrizePool();
+
     default ItemStack getEntryFee() {
         return Mytems.RUBY.createItemStack();
     }

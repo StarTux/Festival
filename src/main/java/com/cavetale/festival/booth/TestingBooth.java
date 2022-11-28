@@ -66,6 +66,14 @@ public final class TestingBooth implements Booth {
         return PRIZE_POOL;
     }
 
+    private static final List<ItemStack> BONUS_PRIZE_POOL =
+        List.of(new ItemStack(Material.EMERALD));
+
+    @Override
+    public List<ItemStack> getBonusPrizePool() {
+        return BONUS_PRIZE_POOL;
+    }
+
     private static void onComplete(Player player) {
     }
 }
