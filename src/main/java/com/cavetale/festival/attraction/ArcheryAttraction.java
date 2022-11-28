@@ -25,9 +25,11 @@ import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Frog;
 import org.bukkit.entity.Mob;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
 import org.bukkit.entity.Rabbit;
+import org.bukkit.entity.Sheep;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import static net.kyori.adventure.text.Component.empty;
@@ -46,8 +48,10 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
     public enum TargetMob {
         FROG(Frog.class, "Frog", 120),
         RABBIT(Rabbit.class, "Rabbit", 100),
-        CHICKEN(Chicken.class, "Chicken", 100),
+        CHICKEN(Chicken.class, "Chicken", 80),
         BEE(Bee.class, "Bee", 240),
+        SHEEP(Sheep.class, "Sheep", 80),
+        PIG(Pig.class, "Pig", 80),
         ;
 
         public final String key = name().toLowerCase();
