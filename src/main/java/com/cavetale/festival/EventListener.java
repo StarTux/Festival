@@ -24,6 +24,7 @@ import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -105,6 +106,14 @@ public final class EventListener implements Listener {
         Attraction attraction = plugin.getAttraction(event.getEntity().getLocation());
         if (attraction == null) return;
         attraction.onEntityCombust(event);
+    }
+
+    @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
+    protected void onEntityBlockForm(EntityBlockFormEvent event) {
+        Attraction attraction = plugin.getAttraction(event.getEntity().getLocation());
+        if (attraction != null) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
