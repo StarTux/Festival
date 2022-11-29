@@ -93,6 +93,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final Booth booth;
     protected final List<Component> debugLines = new ArrayList<>();
     protected final List<String> areaNames = new ArrayList<>();
+    protected final List<String> stringKeys = new ArrayList<>();
+    protected final List<String> intKeys = new ArrayList<>();
+    protected boolean disabled = false;
 
     public static Attraction of(final Festival festival,
                                 @NonNull final String name,
@@ -109,7 +112,6 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         if (booth.getDisplayName() != null) result.displayName = booth.getDisplayName();
         if (booth.getDescription() != null) result.description = booth.getDescription();
         //if (booth.getReward() != null) result.firstCompletionReward = booth.getReward().createItemStack();
-        booth.apply(result);
         return result;
     }
 
@@ -135,18 +137,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                 npcVector = area.min;
             }
         }
-        if (npcVector == null) {
-            debugLine("Area missing: NPC");
-        } else {
-            Location location = npcVector.toCenterFloorLocation(world);
-            mainVillager = PluginSpawn.register(plugin, festival.getTheme().getZoneType(), Loc.of(location));
-            mainVillager.setOnPlayerClick(this::clickMainVillager);
-            mainVillager.setOnMobSpawning(mob -> {
-                    mob.setCollidable(false);
-                });
-        }
         this.booth = config.booth;
         this.areaNames.add("npc");
+        this.stringKeys.add("description");
     }
 
     protected final void debugLine(String txt) {
@@ -182,7 +175,31 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     public final void enable() {
+        Area area = getFirstArea();
+        if (area.getRaw() != null) {
+            if (area.getRaw().get("description") instanceof String desc) {
+                this.description = text(desc);
+            }
+        }
+        try {
+            booth.apply(this);
+        } catch (Exception e) {
+            logWarn("Exception " + e.getMessage());
+            e.printStackTrace();
+            disabled = true;
+        }
+        if (disabled) return;
         onEnable();
+        if (npcVector == null) {
+            debugLine("Area missing: NPC");
+        } else {
+            Location location = npcVector.toCenterFloorLocation(world);
+            mainVillager = PluginSpawn.register(plugin, festival.getTheme().getZoneType(), Loc.of(location));
+            mainVillager.setOnPlayerClick(this::clickMainVillager);
+            mainVillager.setOnMobSpawning(mob -> {
+                    mob.setCollidable(false);
+                });
+        }
     }
 
     public final void disable() {
@@ -216,7 +233,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void progress(Player player) {
-        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 0.3f, 2.0f);
+        player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 0.1f, 2.0f);
     }
 
     protected final void victory(Player player) {
@@ -495,6 +512,11 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected abstract void stop();
 
     protected final void clickMainVillager(Player player) {
+        final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
+        if (creative && !player.hasPermission("festival.testing")) {
+            player.sendMessage(text("You don't have permission", RED));
+            return;
+        }
         Session session = festival.sessionOf(player);
         int prizeWaiting = session.getPrizeWaiting(this);
         if (prizeWaiting > 0) {
@@ -548,11 +570,16 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     public final void onClickYes(Player player) {
+        final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
+        if (creative && !player.hasPermission("festival.testing")) {
+            player.sendMessage(text("You don't have permission", RED));
+            return;
+        }
         if (!checkCooldown(player)) return;
         if (!checkSomebodyPlaying(player)) return;
         if (doesRequireInstrument && !checkInstrument(player)) return;
         if (!takeEntryFee(player)) return;
-        if (NetworkServer.current() == NetworkServer.CREATIVE) {
+        if (creative) {
             player.setGameMode(GameMode.ADVENTURE);
         }
         start(player);
@@ -599,4 +626,8 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
      * Print to the hud.
      */
     public void onPlayerHud(PlayerHudEvent event) { }
+
+    public final Area getFirstArea() {
+        return allAreas.get(0);
+    }
 }

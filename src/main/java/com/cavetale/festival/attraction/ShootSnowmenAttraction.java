@@ -33,9 +33,10 @@ import static net.kyori.adventure.title.Title.title;
 import static org.bukkit.attribute.Attribute.*;
 
 public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttraction.SaveTag> {
-    protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 2);
+    protected Duration gameTime = Duration.ofSeconds(60 * 2);
     protected final Set<Vec3i> snowmanBlocks = new HashSet<>();
     protected long secondsLeft;
+    protected int totalMobs = 54;
     protected int mobsPerWave = 9;
 
     protected ShootSnowmenAttraction(final AttractionConfiguration config) {
@@ -54,6 +55,35 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
         this.areaNames.add("snowman");
         if (snowmanBlocks.isEmpty()) {
             debugLine("No snowman blocks");
+        }
+        this.intKeys.add("time");
+        this.intKeys.add("totalMobs");
+        this.intKeys.add("mobsPerWave");
+    }
+
+    @Override
+    protected void onEnable() {
+        if (getFirstArea().getRaw() != null) {
+            if (getFirstArea().getRaw().get("time") instanceof Number num) {
+                int value = num.intValue();
+                if (value < 0) {
+                    debugLine("time is negative");
+                } else {
+                    this.gameTime = Duration.ofSeconds(value);
+                }
+            }
+            if (getFirstArea().getRaw().get("totalMobs") instanceof Number num) {
+                this.totalMobs = num.intValue();
+                if (totalMobs < 1) {
+                    debugLine("totalMobs = " + totalMobs);
+                }
+            }
+            if (getFirstArea().getRaw().get("mobsPerWave") instanceof Number num) {
+                this.mobsPerWave = num.intValue();
+                if (mobsPerWave < 1) {
+                    debugLine("mobsPerWave = " + mobsPerWave);
+                }
+            }
         }
     }
 
@@ -103,7 +133,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
         Player player = getCurrentPlayer();
         if (player == null || !isInArea(player.getLocation())) return State.IDLE;
         final long now = System.currentTimeMillis();
-        final long then = saveTag.gameStarted + GAME_TIME.toMillis();
+        final long then = saveTag.gameStarted + gameTime.toMillis();
         secondsLeft = Math.max(0, (then - now - 1) / 1000L + 1L);
         if (secondsLeft <= 0L) {
             timeout(player);
@@ -171,7 +201,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
             @Override protected void enter(ShootSnowmenAttraction instance) {
                 instance.saveTag.gameStarted = System.currentTimeMillis();
                 instance.saveTag.score = 0;
-                instance.saveTag.total = 54;
+                instance.saveTag.total = instance.totalMobs;
                 instance.spawnMobs();
             }
 
@@ -242,6 +272,6 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
         event.bossbar(PlayerHudPriority.HIGHEST,
                       makeProgressComponent((int) secondsLeft, VanillaItems.SNOWBALL.component, saveTag.score, saveTag.total),
                       BossBar.Color.RED, BossBar.Overlay.PROGRESS,
-                      (float) secondsLeft / (float) GAME_TIME.toSeconds());
+                      (float) secondsLeft / (float) gameTime.toSeconds());
     }
 }

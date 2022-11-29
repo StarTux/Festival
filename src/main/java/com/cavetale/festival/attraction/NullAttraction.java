@@ -36,9 +36,9 @@ public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
         saveTag.currentPlayer = player.getUniqueId();
         changeState(State.PLAY);
         player.showTitle(title(empty(),
-                               text("Go!", GOLD, ITALIC),
+                               text("Go!", GREEN, ITALIC),
                                times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)));
-        player.sendMessage(text("Go!", GOLD, ITALIC));
+        player.sendMessage(text("Go!", GREEN, ITALIC));
         startingGun(player);
     }
 

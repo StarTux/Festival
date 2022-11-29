@@ -36,3 +36,7 @@ permissions:
   festival.admin:
     description: Use /festadm
     default: op
+
+  festival.testing:
+    description: Attraction testing
+    default: op
