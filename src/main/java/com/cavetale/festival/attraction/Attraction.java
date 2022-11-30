@@ -31,6 +31,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
 import net.kyori.adventure.text.event.ClickEvent;
@@ -65,6 +66,7 @@ import static net.kyori.adventure.text.Component.space;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextColor.color;
 
 /**
  * Base class for all attractions.
@@ -95,23 +97,22 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final List<String> areaNames = new ArrayList<>();
     protected final List<String> stringKeys = new ArrayList<>();
     protected final List<String> intKeys = new ArrayList<>();
-    protected boolean disabled = false;
+    @Setter protected boolean disabled = false;
 
     public static Attraction of(final Festival festival,
                                 @NonNull final String name,
                                 @NonNull final List<Area> areaList,
                                 @NonNull final Booth booth) {
         if (areaList.isEmpty()) throw new IllegalArgumentException(name + ": area list is empty");
-        if (areaList.get(0).name == null) throw new IllegalArgumentException(name + ": first area has no name!");
+        if (areaList.get(0).name == null) {
+            return null;
+        }
         String typeName = areaList.get(0).name;
         AttractionType attractionType = booth.getType() != null
             ? booth.getType()
             : AttractionType.forName(typeName);
         if (attractionType == null) return null;
         Attraction result = attractionType.make(new AttractionConfiguration(festival, attractionType, name, areaList, booth));
-        if (booth.getDisplayName() != null) result.displayName = booth.getDisplayName();
-        if (booth.getDescription() != null) result.description = booth.getDescription();
-        //if (booth.getReward() != null) result.firstCompletionReward = booth.getReward().createItemStack();
         return result;
     }
 
@@ -142,15 +143,15 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         this.stringKeys.add("description");
     }
 
-    protected final void debugLine(String txt) {
+    public final void debugLine(String txt) {
         debugLines.add(text(txt, RED));
     }
 
-    protected final void logWarn(String msg) {
+    public final void logWarn(String msg) {
         festival.logWarn("[" + name + "] " + msg);
     }
 
-    protected final void logInfo(String msg) {
+    public final void logInfo(String msg) {
         festival.logInfo("[" + name + "] " + msg);
     }
 
@@ -182,7 +183,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             }
         }
         try {
-            booth.apply(this);
+            booth.onEnable(this);
         } catch (Exception e) {
             logWarn("Exception " + e.getMessage());
             e.printStackTrace();
@@ -208,6 +209,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             mainVillager = null;
         }
         onDisable();
+        booth.onDisable(this);
     }
 
     public final void tick() {
@@ -228,7 +230,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final void fail(Player player) {
         player.showTitle(Title.title(text("Wrong", DARK_RED),
                                      text("Try Again", DARK_RED)));
-        Music.DECKED_OUT.melody.play(plugin, player);
+        booth.getFailMelody().play(plugin, player);
         festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
     }
 
@@ -511,9 +513,16 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     protected abstract void stop();
 
-    protected final void clickMainVillager(Player player) {
+    /**
+     * Player clickes the main villager.
+     */
+    protected void clickMainVillager(Player player) {
         final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
         if (creative && !player.hasPermission("festival.testing")) {
+            player.sendMessage(text("You don't have permission", RED));
+            return;
+        }
+        if (!player.hasPermission("festival.festival")) {
             player.sendMessage(text("You don't have permission", RED));
             return;
         }
@@ -552,7 +561,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                                       newline(),
                                       text("Play game for "),
                                       newline(),
-                                      DefaultFont.bookmarked(ItemKinds.chatDescription(booth.getEntryFee())),
+                                      DefaultFont.bookmarked(color(0x888888), ItemKinds.chatDescription(booth.getEntryFee())),
                                       text("?"),
                                       newline(),
                                       (DefaultFont.START_BUTTON.component
@@ -569,6 +578,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         player.openBook(book);
     }
 
+    /**
+     * Player clicks "Yes" in the main villager dialogue.
+     */
     public final void onClickYes(Player player) {
         final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
         if (creative && !player.hasPermission("festival.testing")) {

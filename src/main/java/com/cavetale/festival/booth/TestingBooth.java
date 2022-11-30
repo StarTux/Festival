@@ -2,11 +2,8 @@ package com.cavetale.festival.booth;
 
 import com.cavetale.festival.Festival;
 import com.cavetale.festival.FestivalTheme;
-import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
-import com.cavetale.mytems.Mytems;
 import java.util.List;
-import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
@@ -18,30 +15,13 @@ public final class TestingBooth implements Booth {
                                                          "Testing",
                                                          FestivalTheme.TESTING,
                                                          s -> INSTANCE,
-                                                         TestingBooth::onComplete);
+                                                         TestingBooth::onComplete,
+                                                         null, null);
 
     @Override
     public AttractionType getType() {
         return null;
     }
-
-    @Override
-    public Component getDisplayName() {
-        return null;
-    }
-
-    @Override
-    public Component getDescription() {
-        return null;
-    }
-
-    @Override
-    public Mytems getReward() {
-        return null;
-    }
-
-    @Override
-    public void apply(Attraction attraction) { }
 
     @Override
     public Festival getFestival() {

@@ -2,6 +2,7 @@ package com.cavetale.festival;
 
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.booth.TestingBooth;
+import com.cavetale.festival.booth.WintersHearth;
 import com.cavetale.festival.gui.Gui;
 import java.io.File;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ public final class FestivalPlugin extends JavaPlugin {
 
     public void loadFestivals() {
         loadFestival(TestingBooth.FESTIVAL);
+        loadFestival(WintersHearth.FESTIVAL);
     }
 
     private void loadFestival(Festival festival) {
@@ -55,7 +57,7 @@ public final class FestivalPlugin extends JavaPlugin {
 
     public void clearFestivals() {
         for (Festival festival : festivalMap.values()) {
-            festival.clear();
+            festival.unload();
         }
         festivalMap.clear();
     }

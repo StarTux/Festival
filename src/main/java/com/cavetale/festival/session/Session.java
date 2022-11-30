@@ -96,5 +96,6 @@ public final class Session {
         protected final Map<String, Long> cooldowns = new HashMap<>();
         protected final Set<String> uniquesGot = new HashSet<>();
         protected final Map<String, Integer> prizesWaiting = new HashMap<>(); // 1 = regular, 2 = unique
+        protected final Set<String> collection = new HashSet<>(); // Festival specific
     }
 }

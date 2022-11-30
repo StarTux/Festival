@@ -15,7 +15,6 @@ import com.cavetale.resident.PluginSpawn;
 import com.cavetale.resident.save.Loc;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +30,9 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import static com.cavetale.festival.FestivalPlugin.plugin;
 
+/**
+ * Data container for a festival setup.
+ */
 @Getter @RequiredArgsConstructor
 public final class Festival {
     protected static final String TOTAL_COMPLETION = "TotalCompletion";
@@ -40,6 +42,8 @@ public final class Festival {
     protected final FestivalTheme theme;
     protected final Function<String, Booth> boothFunction;
     protected final Consumer<Player> totalCompletionHandler;
+    protected final Runnable loadMethod;
+    protected final Runnable unloadMethod;
     // data
     protected final Map<String, Attraction<?>> attractionsMap = new HashMap<>();
     protected final Sessions sessions = new Sessions(this);
@@ -95,6 +99,7 @@ public final class Festival {
         saveFolder.mkdirs();
         playersFolder = new File(saveFolder, "players");
         playersFolder.mkdirs();
+        if (loadMethod != null) loadMethod.run();
         AreasFile areasFile = loadAreasFile();
         if (areasFile == null) throw new IllegalStateException("Areas file not found: " + worldName + "/" + areasFileName);
         for (Map.Entry<String, List<Area>> entry : areasFile.areas.entrySet()) {
@@ -112,9 +117,7 @@ public final class Festival {
             }
             List<Area> areaList = entry.getValue();
             Attraction<?> attraction = Attraction.of(this, name, areaList, booth != null ? booth : new DefaultBooth());
-            if (attraction == null) {
-                logWarn(name + ": No Attraction!");
-            }
+            if (attraction == null) continue;
             try {
                 attraction.enable();
                 attraction.load();
@@ -130,12 +133,12 @@ public final class Festival {
             AttractionType type = AttractionType.of(attraction);
             counts.put(type, counts.get(type) + 1);
         }
-        List<AttractionType> rankings = new ArrayList<>(List.of(AttractionType.values()));
-        Collections.sort(rankings, (a, b) -> Integer.compare(counts.get(a), counts.get(b)));
-        for (AttractionType type : rankings) {
-            logInfo(counts.get(type) + " " + type);
-        }
-        logInfo(attractionsMap.size() + " Total");
+        logInfo("Loaded: " + attractionsMap.size() + " attractions");
+    }
+
+    public void unload() {
+        clear();
+        if (unloadMethod != null) unloadMethod.run();
     }
 
     public void tick() {

@@ -24,7 +24,7 @@ public final class DummyAttraction extends Attraction<DummyAttraction.SaveTag> {
                 blocks.addAll(area.enumerate());
             }
         }
-        this.displayName = Component.text("Dummy", NamedTextColor.RED);
+        this.displayName = booth.format("Dummy Atraction");
         this.description = Component.text("Hello");
     }
 

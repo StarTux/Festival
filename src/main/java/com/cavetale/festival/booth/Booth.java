@@ -3,7 +3,9 @@ package com.cavetale.festival.booth;
 import com.cavetale.festival.Festival;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
+import com.cavetale.festival.attraction.Music;
 import com.cavetale.mytems.Mytems;
+import com.cavetale.mytems.item.music.Melody;
 import com.cavetale.resident.ZoneType;
 import java.util.List;
 import net.kyori.adventure.text.Component;
@@ -16,13 +18,14 @@ import org.bukkit.inventory.ItemStack;
 public interface Booth {
     AttractionType getType();
 
-    Component getDisplayName();
+    /**
+     * Called when the attraction has finished loading and will
+     * enable.  This is an opportunity to set some values, or set
+     * disabled to true.
+     */
+    default void onEnable(Attraction<?> attraction) { }
 
-    Component getDescription();
-
-    Mytems getReward();
-
-    void apply(Attraction attraction);
+    default void onDisable(Attraction<?> attraction) { }
 
     default Component format(String txt) {
         return getFestival().getTheme().format(txt);
@@ -46,5 +49,9 @@ public interface Booth {
 
     default ZoneType getZoneType() {
         return getFestival().getTheme().getZoneType();
+    }
+
+    default Melody getFailMelody() {
+        return Music.DECKED_OUT.melody;
     }
 }
