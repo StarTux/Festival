@@ -44,6 +44,7 @@ public final class Festival {
     protected final Consumer<Player> totalCompletionHandler;
     protected final Runnable loadMethod;
     protected final Runnable unloadMethod;
+    protected final Consumer<Player> guiHandler;
     // data
     protected final Map<String, Attraction<?>> attractionsMap = new HashMap<>();
     protected final Sessions sessions = new Sessions(this);
@@ -214,5 +215,9 @@ public final class Festival {
 
     public Session sessionOf(PlayerCache player) {
         return sessions.of(player);
+    }
+
+    public void openInventory(Player player) {
+        if (guiHandler != null) guiHandler.accept(player);
     }
 }

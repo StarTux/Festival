@@ -422,7 +422,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final void giveInGui(Player player, ItemStack prize, ItemStack... extras) {
         final int size = 27;
         Component title = GuiOverlay.BLANK.builder(size, DARK_RED).title(displayName).build();
-        Gui gui = new Gui(plugin);
+        Gui gui = new Gui();
         gui.size(size);
         gui.setItem(13, prize);
         int[] indexes = {
@@ -525,27 +525,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
      * Player clickes the main villager.
      */
     protected void clickMainVillager(Player player) {
-        final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
-        if (creative && !player.hasPermission("festival.testing")) {
-            player.sendMessage(text("You don't have permission", RED));
-            return;
-        }
-        if (!player.hasPermission("festival.festival")) {
-            player.sendMessage(text("You don't have permission", RED));
-            return;
-        }
+        if (!checkPermission(player)) return;
+        if (checkPrizeWaiting(player)) return;
         Session session = festival.sessionOf(player);
-        int prizeWaiting = session.getPrizeWaiting(this);
-        if (prizeWaiting > 0) {
-            session.clearPrizeWaiting(this);
-            session.save();
-            if (prizeWaiting == 2) {
-                giveFirstCompletionReward(player);
-            } else {
-                giveRegularCompletionReward(player);
-            }
-            return;
-        }
         if (!checkCooldown(player)) return;
         if (!checkSomebodyPlaying(player)) return;
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
@@ -586,10 +568,41 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         player.openBook(book);
     }
 
+    protected final boolean checkPermission(Player player) {
+        final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
+        if (creative && !player.hasPermission("festival.testing")) {
+            player.sendMessage(text("You don't have permission", RED));
+            return false;
+        }
+        if (!player.hasPermission("festival.festival")) {
+            player.sendMessage(text("You don't have permission", RED));
+            return false;
+        }
+        return true;
+    }
+
+    protected final boolean checkPrizeWaiting(Player player) {
+        Session session = festival.sessionOf(player);
+        int prizeWaiting = session.getPrizeWaiting(this);
+        if (prizeWaiting > 0) {
+            session.clearPrizeWaiting(this);
+            session.save();
+            if (prizeWaiting == 2) {
+                giveFirstCompletionReward(player);
+                return true;
+            } else {
+                giveRegularCompletionReward(player);
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Player clicks "Yes" in the main villager dialogue.
      */
-    public final void onClickYes(Player player) {
+    public void onClickYes(Player player) {
         final boolean creative = NetworkServer.current() == NetworkServer.CREATIVE;
         if (creative && !player.hasPermission("festival.testing")) {
             player.sendMessage(text("You don't have permission", RED));

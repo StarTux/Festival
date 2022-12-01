@@ -2,7 +2,6 @@ package com.cavetale.festival.gui;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Consumer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -27,7 +26,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class Gui implements InventoryHolder {
     public static final int OUTSIDE = -999;
-    @Getter final JavaPlugin plugin;
+    private static JavaPlugin plugin;
     private Inventory inventory;
     private Map<Integer, Slot> slots = new HashMap<>();
     private Consumer<InventoryCloseEvent> onClose = null;
@@ -42,10 +41,6 @@ public final class Gui implements InventoryHolder {
         final int index;
         ItemStack item;
         Consumer<InventoryClickEvent> onClick;
-    }
-
-    public Gui(final JavaPlugin plugin) {
-        this.plugin = Objects.requireNonNull(plugin, "plugin=null");
     }
 
     public Gui title(Component newTitle) {
@@ -180,8 +175,6 @@ public final class Gui implements InventoryHolder {
 
     @RequiredArgsConstructor
     public static final class EventListener implements Listener {
-        private final JavaPlugin plugin;
-
         @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
         void onInventoryOpen(final InventoryOpenEvent event) {
             if (event.getInventory().getHolder() instanceof Gui) {
@@ -229,8 +222,9 @@ public final class Gui implements InventoryHolder {
         return gui;
     }
 
-    public static void enable(JavaPlugin plugin) {
-        Bukkit.getPluginManager().registerEvents(new EventListener(plugin), plugin);
+    public static void enable(JavaPlugin thePlugin) {
+        plugin = thePlugin;
+        Bukkit.getPluginManager().registerEvents(new EventListener(), plugin);
     }
 
     public static void disable() {

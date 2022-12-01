@@ -339,7 +339,9 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         if (attraction == null) throw new CommandWarn("There is no attraction here");
         String key = args[0];
         if (args.length < 2) {
-            Object value = attraction.getFirstArea().getRaw().get(key);
+            Object value = attraction.getFirstArea().getRaw() != null
+                ? attraction.getFirstArea().getRaw().get(key)
+                : null;
             player.sendMessage(textOfChildren(text("Value of ", AQUA),
                                               text(key, YELLOW),
                                               text(" is ", AQUA),

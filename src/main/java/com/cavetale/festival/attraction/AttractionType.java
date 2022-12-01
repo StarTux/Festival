@@ -21,6 +21,7 @@ public enum AttractionType {
     PET_PILE(PetPileAttraction.class, PetPileAttraction::new),
     ARCHERY(ArcheryAttraction.class, ArcheryAttraction::new),
     SHOOT_SNOWMEN(ShootSnowmenAttraction.class, ShootSnowmenAttraction::new),
+    TRADE_CHAIN(TradeChainAttraction.class, TradeChainAttraction::new),
     ;
 
     public final Class<? extends Attraction> type;

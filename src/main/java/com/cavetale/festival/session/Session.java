@@ -84,6 +84,10 @@ public final class Session {
         tag.prizesWaiting.remove(attraction.getUniqueKey());
     }
 
+    public Set<String> getCollection() {
+        return tag.collection;
+    }
+
     public void reset() {
         tag.totallyCompleted = false;
         tag.cooldowns.clear();

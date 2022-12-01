@@ -17,6 +17,9 @@ public final class FestivalCommand extends AbstractCommand<FestivalPlugin> {
         rootNode.addChild("no").hidden(true).denyTabCompletion()
             .description("Say no")
             .playerCaller(this::no);
+        rootNode.addChild("inv").hidden(true).denyTabCompletion()
+            .description("Open inventory")
+            .playerCaller(this::inv);
     }
 
     protected boolean yes(Player player, String[] args) {
@@ -28,6 +31,14 @@ public final class FestivalCommand extends AbstractCommand<FestivalPlugin> {
     }
 
     protected boolean no(Player player, String[] args) {
+        return true;
+    }
+
+    protected boolean inv(Player player, String[] args) {
+        if (args.length != 0) return true;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) return true;
+        festival.openInventory(player);
         return true;
     }
 }

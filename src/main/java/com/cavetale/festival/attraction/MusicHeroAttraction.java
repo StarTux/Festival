@@ -16,6 +16,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
@@ -64,6 +65,23 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
         this.areaNames.add("lectern");
         if (lecternBlock == null) {
             debugLine("No lectern block");
+        }
+        this.stringKeys.add("music");
+    }
+
+    @Override
+    public void onEnable() {
+        Map<String, Object> raw = getFirstArea().getRaw() != null
+            ? getFirstArea().getRaw()
+            : Map.of();
+        if (raw.get("music") instanceof String musicName) {
+            try {
+                this.music = Music.valueOf(musicName.toUpperCase());
+            } catch (IllegalArgumentException iae) {
+                debugLine("Invalid music: " + musicName);
+            }
+        } else {
+            debugLine("Music not set");
         }
     }
 
