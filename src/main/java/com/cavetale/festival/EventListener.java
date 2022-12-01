@@ -164,6 +164,7 @@ public final class EventListener implements Listener {
         if (festival == null) return;
         Session session = festival.sessionOf(event.getPlayer());
         for (Attraction attraction : festival.getAttractions()) {
+            if (attraction.isDisabled()) continue;
             Vec3i vec = attraction.getNpcVector();
             if (vec == null) continue;
             if (vec.x < event.getMinX() || vec.x > event.getMaxX()) continue;
