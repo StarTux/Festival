@@ -8,7 +8,7 @@ import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.attraction.Music;
 import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.item.music.Melody;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.YearMonth;
 import java.util.List;
@@ -145,23 +145,22 @@ public final class WintersHearth implements Booth {
     private static void onLoad() {
         final int year = 2022;
         final YearMonth month = YearMonth.of(year, Month.DECEMBER);
-        if (NetworkServer.current() == NetworkServer.CREATIVE) {
-            currentDay = 25;
-        } else {
-            LocalDate now = LocalDate.now();
-            if (now.getYear() != year) {
-                currentDay = 0;
-            } else {
-                for (int i = 25; i > 0; i -= 1) {
-                    LocalDate date = month.atDay(i);
-                    if (now.isAfter(date) || now.isEqual(date)) {
-                        currentDay = i;
-                        break;
-                    }
+        LocalDateTime now = LocalDateTime.now();
+        currentDay = 0;
+        if (now.getYear() == year) {
+            for (int i = 25; i > 0; i -= 1) {
+                LocalDateTime date = month.atDay(i).atTime(12, 0, 0);
+                if (now.isAfter(date)) {
+                    currentDay = i;
+                    break;
                 }
             }
         }
         FESTIVAL.logInfo("CurrentDay = " + currentDay);
+        if (NetworkServer.current() == NetworkServer.CREATIVE) {
+            currentDay = 25;
+            FESTIVAL.logInfo("Creative CurrentDay = " + currentDay);
+        }
     }
 
     private static void onUnload() {
