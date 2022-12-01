@@ -75,6 +75,8 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                     e.setRemoveWhenFarAway(true);
                     e.setSilent(true);
                     Entities.setTransient(e);
+                    if (e instanceof Pig pig) pig.setBaby();
+                    if (e instanceof Sheep sheep) sheep.setBaby();
                 });
         }
     }
