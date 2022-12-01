@@ -5,7 +5,9 @@ import com.cavetale.festival.Festival;
 import com.cavetale.festival.FestivalTheme;
 import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
+import com.cavetale.festival.attraction.Music;
 import com.cavetale.mytems.Mytems;
+import com.cavetale.mytems.item.music.Melody;
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.YearMonth;
@@ -179,6 +181,9 @@ public final class WintersHearth implements Booth {
         }
         if (day < 1 || day > 25) {
             attraction.debugLine("Invalid day: " + day);
+            if (NetworkServer.current() != NetworkServer.CREATIVE) {
+                attraction.setDisabled(true);
+            }
         }
         if (currentDay < day) {
             attraction.setDisabled(true);
@@ -228,5 +233,15 @@ public final class WintersHearth implements Booth {
         final String cmd = "kite member ChristmasComplete2022 " + player.getName();
         plugin().getLogger().info("[WintersHearth] Executing command: " + cmd);
         Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+    }
+
+    @Override
+    public Melody getFailMelody() {
+        return Music.GRINCH.melody;
+    }
+
+    @Override
+    public Melody getSuccessMelody() {
+        return Music.DECK_THE_HALLS.melody;
     }
 }

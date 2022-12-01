@@ -54,4 +54,8 @@ public interface Booth {
     default Melody getFailMelody() {
         return Music.DECKED_OUT.melody;
     }
+
+    default Melody getSuccessMelody() {
+        return Music.TREASURE.melody;
+    }
 }

@@ -3,7 +3,8 @@ package com.cavetale.festival.attraction;
 import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
-import com.cavetale.core.font.VanillaItems;
+import com.cavetale.core.font.VanillaEffects;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.util.Entities;
@@ -40,9 +41,11 @@ import static net.kyori.adventure.title.Title.Times.times;
 import static net.kyori.adventure.title.Title.title;
 
 public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTag> {
-    protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 3);
+    protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 2);
     protected final Map<TargetMob, List<Vec3i>> targetMobs = new EnumMap<>(TargetMob.class);
     protected long secondsLeft;
+    protected Vec3i respawnVector = Vec3i.ZERO;
+    protected final List<Cuboid> forbiddenZones = new ArrayList<>();
 
     @RequiredArgsConstructor
     public enum TargetMob {
@@ -91,12 +94,23 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 targetMobs.get(targetMob).add(area.getMin());
                 continue;
             }
+            switch (area.name) {
+            case "forbidden":
+                forbiddenZones.add(area.toCuboid());
+                break;
+            case "respawn":
+                respawnVector = area.getMin();
+                break;
+            default: break;
+            }
         }
         this.displayName = booth.format("Archery");
         this.description = text("Shoot the moving targets, but avoid the glowing ones.");
         for (TargetMob targetMob : TargetMob.values()) {
             this.areaNames.add(targetMob.key);
         }
+        this.areaNames.add("forbidden");
+        this.areaNames.add("respawn");
         for (TargetMob targetMob : TargetMob.values()) {
             List<Vec3i> ls = targetMobs.get(targetMob);
             if (ls.size() != 2) {
@@ -177,8 +191,9 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             if (targetMobData == null) return;
             hitEntity.remove();
             if (hitEntity.isGlowing()) {
-                Music.DECKED_OUT.melody.play(plugin, player);
+                fail(player, "Do not hit glowing targets");
                 saveTag.wrong += 1;
+                changeState(State.IDLE);
             } else {
                 confetti(hitEntity.getLocation());
                 targetMobData.uuids.remove(uuid);
@@ -217,8 +232,25 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             }
             return State.IDLE;
         }
+        if (saveTag.missed >= 10) {
+            fail(player, "Too many targets escaped");
+            return State.IDLE;
+        }
         for (TargetMob targetMob : TargetMob.values()) {
             tickTargetMob(player, targetMob);
+        }
+        final Location location = player.getLocation();
+        for (Cuboid zone : forbiddenZones) {
+            if (zone.contains(location)) {
+                Vec3i vec = respawnVector.equals(Vec3i.ZERO)
+                    ? npcVector
+                    : respawnVector;
+                Location target = vec.toCenterFloorLocation(world);
+                target.setPitch(location.getPitch());
+                target.setYaw(location.getYaw());
+                player.teleport(target);
+                player.sendMessage(text("Do not step on the shooting range", RED));
+            }
         }
         return null;
     }
@@ -334,7 +366,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
     @Override
     public void onPlayerHud(PlayerHudEvent event) {
         event.bossbar(PlayerHudPriority.HIGHEST,
-                      makeProgressComponent((int) secondsLeft, VanillaItems.ARROW.component, saveTag.score, saveTag.spawned),
+                      makeProgressComponent((int) secondsLeft, VanillaEffects.SPEED, saveTag.missed, 10),
                       BossBar.Color.RED, BossBar.Overlay.PROGRESS,
                       (float) secondsLeft / (float) GAME_TIME.toSeconds());
     }

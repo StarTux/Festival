@@ -223,13 +223,21 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final void timeout(Player player) {
         player.showTitle(Title.title(text("Timeout", DARK_RED),
                                      text("Try Again", DARK_RED)));
-        Music.DECKED_OUT.melody.play(plugin, player);
+        booth.getFailMelody().play(plugin, player);
         festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
     }
 
     protected final void fail(Player player) {
         player.showTitle(Title.title(text("Wrong", DARK_RED),
                                      text("Try Again", DARK_RED)));
+        booth.getFailMelody().play(plugin, player);
+        festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
+    }
+
+    protected final void fail(Player player, String msg) {
+        player.showTitle(Title.title(text(Unicode.subscript("try again"), DARK_RED),
+                                     text(msg, DARK_RED)));
+        player.sendMessage(text(msg, RED));
         booth.getFailMelody().play(plugin, player);
         festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
     }
@@ -242,7 +250,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         Component message = booth.format("Complete");
         player.showTitle(Title.title(message, booth.format("Good Job!")));
         player.sendMessage(message);
-        Music.TREASURE.melody.play(FestivalPlugin.getInstance(), player);
+        booth.getSuccessMelody().play(FestivalPlugin.getInstance(), player);
     }
 
     protected final void perfect(Player player, boolean withMusic) {
@@ -250,7 +258,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         player.showTitle(Title.title(message, empty()));
         player.sendMessage(message);
         if (withMusic) {
-            Music.TREASURE.melody.play(FestivalPlugin.getInstance(), player);
+            booth.getSuccessMelody().play(FestivalPlugin.getInstance(), player);
         }
     }
 

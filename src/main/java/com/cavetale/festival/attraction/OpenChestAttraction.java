@@ -99,7 +99,7 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
         } else {
             session.setCooldown(this, (session.isUniqueLocked(this)
                                        ? completionCooldown
-                                       : Duration.ofSeconds(30)));
+                                       : Duration.ofSeconds(10)));
         }
         changeState(State.IDLE);
     }
