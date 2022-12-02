@@ -89,10 +89,7 @@ public final class Session {
     }
 
     public void reset() {
-        tag.totallyCompleted = false;
-        tag.cooldowns.clear();
-        tag.uniquesGot.clear();
-        tag.prizesWaiting.clear();
+        tag = new Tag();
     }
 
     static final class Tag {
