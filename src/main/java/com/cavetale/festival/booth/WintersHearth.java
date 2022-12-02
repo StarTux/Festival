@@ -283,7 +283,8 @@ public final class WintersHearth implements Booth {
     private static void openGui(Player player) {
         final int size = 3 * 9;
         Gui gui = new Gui().size(size);
-        GuiOverlay.Builder overlay = GuiOverlay.BLANK.builder(size, BLUE).title(text("Christmas Inventory"));
+        var title = text("Christmas Inventory Day " + currentDay);
+        GuiOverlay.Builder overlay = GuiOverlay.BLANK.builder(size, BLUE).title(title);
         gui.title(overlay.build());
         int nextIndex = 0;
         Session session = FESTIVAL.sessionOf(player);
