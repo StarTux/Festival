@@ -179,10 +179,6 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         if (saveTag.state != State.PLAY) return;
         event.setCancelled(true);
         Projectile projectile = event.getEntity();
-        switch (projectile.getType()) {
-        case ARROW: case SPECTRAL_ARROW: break;
-        default: return;
-        }
         projectile.remove();
         if (!(projectile.getShooter() instanceof Player player)) return;
         if (!player.getUniqueId().equals(saveTag.currentPlayer)) return;
@@ -254,6 +250,9 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 player.sendMessage(text("Do not step on the shooting range", RED));
             }
         }
+        if (saveTag.spawnCooldown > 0) {
+            saveTag.spawnCooldown -= 1;
+        }
         return null;
     }
 
@@ -288,10 +287,13 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 mob.getPathfinder().moveTo(to.toCenterFloorLocation(world));
             }
         }
+        // Spawn new mob
+        if (saveTag.spawnCooldown > 0) return;
         if (data.cooldown > 0) {
             data.cooldown -= 1;
         } else {
             data.cooldown = targetMob.cooldown + 20 * (random.nextInt(4) - random.nextInt(4));
+            saveTag.spawnCooldown = 12;
             Mob mob = targetMob.spawn(from.toCenterFloorLocation(world));
             if (mob != null) {
                 data.uuids.add(mob.getUniqueId());
@@ -319,6 +321,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 instance.saveTag.spawned = 0;
                 instance.saveTag.missed = 0;
                 instance.saveTag.wrong = 0;
+                instance.saveTag.spawnCooldown = 0;
             }
 
             @Override protected void exit(ArcheryAttraction instance) {
@@ -347,6 +350,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         protected int spawned;
         protected int missed;
         protected int wrong;
+        protected int spawnCooldown;
         protected Map<String, TargetMobData> targetMobs = new HashMap<>();
     }
 
