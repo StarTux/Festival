@@ -7,7 +7,9 @@ import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -27,11 +29,13 @@ public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag>
 
     protected MemoryAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
+        Set<Vec3i> memoryBlockSet = new HashSet<>();
         for (Area cuboid : allAreas) {
             if ("block".equals(cuboid.name)) {
-                memoryBlocks.addAll(cuboid.enumerate());
+                memoryBlockSet.addAll(cuboid.enumerate());
             }
         }
+        memoryBlocks.addAll(memoryBlockSet);
         this.displayName = booth.format("Memory Game");
         this.description = text("Find matching pairs of blocks. Reveal 2 blocks at a time.");
         this.playTime = Duration.ofSeconds(memoryBlocks.size() * 5);
