@@ -238,10 +238,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
         if (attraction == null) return List.of();
         List<String> result = new ArrayList<>();
-        boolean first = false;
+        boolean first = true;
         for (var area : attraction.getAllAreas()) {
             if (first) {
-                first = true;
+                first = false;
                 continue;
             }
             String name = area.getName();
@@ -299,7 +299,7 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         List<Area> areaList = areasFile.getAreas().get(attraction.getName());
         assert areaList != null;
         Area removedArea = null;
-        for (int i = areaList.size() - 1; i >= 0; i -= 1) {
+        for (int i = areaList.size() - 1; i > 0; i -= 1) {
             Area area = areaList.get(i);
             if (name.equals(area.getName())) {
                 removedArea = areaList.remove(i);
