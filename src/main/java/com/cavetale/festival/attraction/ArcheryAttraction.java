@@ -22,6 +22,7 @@ import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Bee;
+import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Frog;
@@ -107,7 +108,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             }
         }
         this.displayName = booth.format("Archery");
-        this.description = text("Shoot the moving targets, but avoid the glowing ones.");
+        this.description = text("Shoot the moving targets, but avoid ones carrying kittens.");
         for (TargetMob targetMob : TargetMob.values()) {
             this.areaNames.add(targetMob.key);
         }
@@ -183,29 +184,38 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         if (!(projectile.getShooter() instanceof Player player)) return;
         if (!player.getUniqueId().equals(saveTag.currentPlayer)) return;
         Entity hitEntity = event.getHitEntity();
-        if (hitEntity != null) {
-            final UUID uuid = hitEntity.getUniqueId();
-            final TargetMobData targetMobData = findTargetMobData(uuid);
-            if (targetMobData == null) return;
-            hitEntity.remove();
-            if (hitEntity.isGlowing()) {
-                fail(player, "Do not hit glowing targets");
-                saveTag.wrong += 1;
-                changeState(State.IDLE);
-            } else {
-                confetti(hitEntity.getLocation());
-                targetMobData.uuids.remove(uuid);
-                progress(player);
-                saveTag.score += 1;
-            }
+        if (hitEntity == null) return;
+        if (hitEntity.isInsideVehicle()) hitEntity = hitEntity.getVehicle();
+        final UUID uuid = hitEntity.getUniqueId();
+        final TargetMobData targetMobData = findTargetMobData(uuid);
+        if (targetMobData == null) return;
+        boolean hasPassengers = !hitEntity.getPassengers().isEmpty();
+        removeEntity(hitEntity);
+        if (hasPassengers) {
+            fail(player, "Do not hit targets carrying kittens");
+            saveTag.wrong += 1;
+            changeState(State.IDLE);
+        } else {
+            confetti(hitEntity.getLocation());
+            targetMobData.uuids.remove(uuid);
+            progress(player);
+            saveTag.score += 1;
         }
     }
 
     private void clearEntities() {
         for (UUID uuid : getEntityUuids()) {
             Entity entity = Bukkit.getEntity(uuid);
-            if (entity != null) entity.remove();
+            removeEntity(entity);
         }
+    }
+
+    private void removeEntity(Entity entity) {
+        if (entity == null) return;
+        for (Entity passenger : entity.getPassengers()) {
+            passenger.remove();
+        }
+        entity.remove();
     }
 
     protected State tickGame() {
@@ -276,13 +286,13 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             }
             Location mobLocation = entity.getLocation();
             if (to.contains(mobLocation)) {
-                if (!entity.isGlowing()) {
+                if (entity.getPassengers().isEmpty()) {
                     saveTag.missed += 1;
                     player.sendActionBar(text(targetMob.displayName + " Escaped", RED));
                     player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.5f, 0.5f);
                 }
                 data.uuids.remove(uuid);
-                entity.remove();
+                removeEntity(entity);
             } else if (entity instanceof Mob mob) {
                 mob.getPathfinder().moveTo(to.toCenterFloorLocation(world));
             }
@@ -294,12 +304,22 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         } else {
             data.cooldown = targetMob.cooldown + 20 * (random.nextInt(4) - random.nextInt(4));
             saveTag.spawnCooldown = 12;
-            Mob mob = targetMob.spawn(from.toCenterFloorLocation(world));
+            Location mobSpawnLocation = from.toCenterFloorLocation(world);
+            Mob mob = targetMob.spawn(mobSpawnLocation);
             if (mob != null) {
                 data.uuids.add(mob.getUniqueId());
                 Bukkit.getMobGoals().removeAllGoals(mob);
                 if (random.nextInt(5) == 0) {
-                    mob.setGlowing(true);
+                    Cat cat = world.spawn(mobSpawnLocation, Cat.class, c -> {
+                            c.setPersistent(false);
+                            c.setRemoveWhenFarAway(true);
+                            c.setAI(false);
+                            c.setAware(false);
+                            c.setBaby();
+                            c.setSilent(true);
+                            Entities.setTransient(c);
+                        });
+                    if (cat != null) mob.addPassenger(cat);
                 } else {
                     saveTag.spawned += 1;
                 }
