@@ -20,11 +20,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Tag;
-import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
@@ -43,7 +43,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
     protected PetPileAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
         this.displayName = booth.format("Pet Pile");
-        this.description = text("Can you help me find my cat?");
+        this.description = text("Can you help me sort out my pets?");
         for (Area area : allAreas) {
             if ("pet".equals(area.name)) {
                 petBlocks.addAll(area.enumerate());
@@ -55,7 +55,26 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         this.areaNames.add("show");
         if (petBlocks.isEmpty()) debugLine("No pet blocks");
         if (showBlock == null) debugLine("No show block");
+        this.intKeys.add("realPetCount");
+        this.intKeys.add("fakePetCount");
+        this.intKeys.add("time");
         setCats();
+    }
+
+    @Override
+    public void onEnable() {
+        Map<String, Object> raw = getFirstArea().getRaw() != null
+            ? getFirstArea().getRaw()
+            : Map.of();
+        if (raw.get("realPetCount") instanceof Number number) {
+            this.realPetCount = number.intValue();
+        }
+        if (raw.get("fakePetCount") instanceof Number number) {
+            this.fakePetCount = number.intValue();
+        }
+        if (raw.get("time") instanceof Number number) {
+            this.playTime = Duration.ofSeconds(number.intValue());
+        }
     }
 
     public void setCats() {
@@ -94,31 +113,12 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         if (newState != null) changeState(newState);
     }
 
-    protected State tickPlay(Player player) {
-        long playedTime = System.currentTimeMillis() - saveTag.playStarted;
-        long timeLeft = playTime.toMillis() - playedTime;
-        if (timeLeft < 0) {
-            timeout(player);
-            return State.IDLE;
+    private List<Block> makePetBlockList() {
+        List<Block> petBlockList = new ArrayList<>();
+        for (Vec3i v : petBlocks) {
+            petBlockList.add(v.toBlock(world));
         }
-        secondsLeft = (int) ((timeLeft - 1) / 1000L) + 1;
-        return null;
-    }
-
-    protected void changeState(State newState) {
-        State oldState = saveTag.state;
-        saveTag.state = newState;
-        oldState.exit(this);
-        newState.enter(this);
-    }
-
-    protected void rollPets() {
-        saveTag.totalRealPets = 0;
-        saveTag.petsFound = 0;
-        List<Vec3i> petBlockList = new ArrayList<>(petBlocks);
-        World w = getWorld();
-        petBlockList.removeIf(v -> {
-                Block block = v.toBlock(w);
+        petBlockList.removeIf(block -> {
                 if (block.isEmpty()) return false;
                 Material mat = block.getType();
                 if (Tag.WOOL_CARPETS.isTagged(mat)) return false;
@@ -137,6 +137,41 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
                 default: return true;
                 }
             });
+        return petBlockList;
+    }
+
+    protected State tickPlay(Player player) {
+        long playedTime = System.currentTimeMillis() - saveTag.playStarted;
+        long timeLeft = playTime.toMillis() - playedTime;
+        if (timeLeft < 0) {
+            timeout(player);
+            return State.IDLE;
+        }
+        secondsLeft = (int) ((timeLeft - 1) / 1000L) + 1;
+        List<Block> petBlockList = makePetBlockList();
+        for (UUID uuid : saveTag.pets.keySet()) {
+            if (!(Bukkit.getEntity(uuid) instanceof Mob mob)) continue;
+            var path = mob.getPathfinder().getCurrentPath();
+            if (path != null && path.getFinalPoint().distanceSquared(mob.getLocation()) > 2.0) {
+                continue;
+            }
+            Block target = petBlockList.get(random.nextInt(petBlockList.size()));
+            mob.getPathfinder().moveTo(target.getLocation().add(0.5, 0.0, 0.5));
+        }
+        return null;
+    }
+
+    protected void changeState(State newState) {
+        State oldState = saveTag.state;
+        saveTag.state = newState;
+        oldState.exit(this);
+        newState.enter(this);
+    }
+
+    protected void rollPets() {
+        saveTag.totalRealPets = 0;
+        saveTag.petsFound = 0;
+        List<Block> petBlockList = makePetBlockList();
         Collections.shuffle(petBlockList);
         petSpawner.roll();
         saveTag.realName = petSpawner.realName();
@@ -145,15 +180,15 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         for (int i = 0; i < realPetCount + fakePetCount; i += 1) {
             boolean real = i < realPetCount;
             if (blockListIndex >= petBlockList.size()) blockListIndex = 0;
-            Vec3i vec = petBlockList.get(blockListIndex++);
-            Location location = vec.toCenterFloorLocation(w);
+            Block block = petBlockList.get(blockListIndex++);
+            Location location = block.getLocation().add(0.5, 0.0, 0.5);
             location.setYaw(random.nextFloat() * 360f);
             Entity entity = petSpawner.spawn(location, real, false);
             saveTag.pets.put(entity.getUniqueId(), real);
             if (real) saveTag.totalRealPets += 1;
         }
         if (showBlock != null) {
-            Entity entity = petSpawner.spawn(showBlock.toCenterFloorLocation(w), true, true);
+            Entity entity = petSpawner.spawn(showBlock.toCenterFloorLocation(world), true, true);
             saveTag.showEntity = entity.getUniqueId();
         }
     }
@@ -279,17 +314,19 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
             Cat result = location.getWorld().spawn(location, Cat.class, cat -> {
                     cat.setPersistent(false);
                     cat.setCatType(real ? realType : fakeTypes.get(fakeIndex++));
-                    cat.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.1);
+                    cat.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.15);
                     if (!forShow && random.nextBoolean()) {
                         cat.setBaby();
                     }
                     if (forShow) {
                         cat.setTamed(true);
                         cat.setSitting(true);
+                        cat.setSilent(true);
                         cat.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.0);
                         cat.setCollidable(false);
                         cat.customName(booth.format(realName()));
                     }
+                    Bukkit.getMobGoals().removeAllGoals(cat);
                 });
             Bukkit.getMobGoals().removeAllGoals(result, GoalType.TARGET);
             return result;
