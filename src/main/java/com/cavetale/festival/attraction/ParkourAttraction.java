@@ -103,6 +103,7 @@ public final class ParkourAttraction extends Attraction<ParkourAttraction.SaveTa
     @Override
     public void onEntityToggleGlide(EntityToggleGlideEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
+        if (!isCurrentPlayer(player)) return;
         if (event.isGliding()) {
             fail(player, "No flying");
             changeState(State.IDLE);
