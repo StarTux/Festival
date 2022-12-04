@@ -2,6 +2,7 @@ package com.cavetale.festival.attraction;
 
 import com.cavetale.area.struct.Area;
 import com.cavetale.core.connect.NetworkServer;
+import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.item.PlayerReceiveItemsEvent;
 import com.cavetale.core.event.player.PluginPlayerEvent;
@@ -52,10 +53,12 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
 import static com.cavetale.festival.FestivalPlugin.plugin;
@@ -328,6 +331,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     public void onProjectileHit(ProjectileHitEvent event) { }
 
+    public void onPlayerTeleport(PlayerTeleportEvent event) { }
+
+    public void onEntityToggleGlide(EntityToggleGlideEvent event) { }
+
+    public void onPlayerBlockAbility(PlayerBlockAbilityQuery event) { }
+
     public final void onPlayerQuit(PlayerQuitEvent event) {
         if (isPlaying() && event.getPlayer().equals(getCurrentPlayer())) {
             festival.sessionOf(event.getPlayer()).setCooldown(this, Duration.ofMinutes(1));
@@ -455,7 +464,6 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                                                + minutes + "m "
                                                + seconds + "s",
                                                RED);
-            player.sendMessage(message);
             player.sendActionBar(message);
             return false;
         }

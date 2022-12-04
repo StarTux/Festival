@@ -1,5 +1,6 @@
 package com.cavetale.festival;
 
+import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.player.PluginPlayerEvent;
@@ -28,11 +29,13 @@ import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.map.MapCursor;
@@ -217,5 +220,20 @@ public final class EventListener implements Listener {
     private void onWorldUnload(WorldUnloadEvent event) {
         Festival festival = plugin.getFestival(event.getWorld());
         if (festival != null) festival.unload();
+    }
+
+    @EventHandler
+    private void onPlayerTeleport(PlayerTeleportEvent event) {
+        plugin.applyAttraction(event.getTo(), a -> a.onPlayerTeleport(event));
+    }
+
+    @EventHandler
+    private void onEntityToggleGlide(EntityToggleGlideEvent event) {
+        plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityToggleGlide(event));
+    }
+
+    @EventHandler
+    private void onPlayerBlockAbility(PlayerBlockAbilityQuery event) {
+        plugin.applyAttraction(event.getBlock(), a -> a.onPlayerBlockAbility(event));
     }
 }

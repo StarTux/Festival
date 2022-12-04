@@ -14,6 +14,7 @@ import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FestivalPlugin extends JavaPlugin {
@@ -71,6 +72,26 @@ public final class FestivalPlugin extends JavaPlugin {
     protected <T extends Attraction> void applyActiveAttraction(Class<T> type, Consumer<T> consumer) {
         for (Festival festival : festivalMap.values()) {
             festival.applyActiveAttraction(type, consumer);
+        }
+    }
+
+    protected void applyAttraction(Location location, Consumer<Attraction<?>> consumer) {
+        Festival festival = getFestival(location.getWorld());
+        if (festival == null) return;
+        for (Attraction attraction : festival.attractionsMap.values()) {
+            if (attraction.getMainArea().contains(location)) {
+                consumer.accept(attraction);
+            }
+        }
+    }
+
+    protected void applyAttraction(Block block, Consumer<Attraction<?>> consumer) {
+        Festival festival = getFestival(block.getWorld());
+        if (festival == null) return;
+        for (Attraction attraction : festival.attractionsMap.values()) {
+            if (attraction.getMainArea().contains(block)) {
+                consumer.accept(attraction);
+            }
         }
     }
 

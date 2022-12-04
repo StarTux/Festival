@@ -110,7 +110,7 @@ public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
             @Override protected void exit(NullAttraction instance) { }
 
             @Override protected State tick(NullAttraction instance) {
-                return null;
+                return instance.tickGame();
             }
         };
 

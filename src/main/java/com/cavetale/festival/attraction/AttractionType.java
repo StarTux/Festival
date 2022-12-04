@@ -22,6 +22,7 @@ public enum AttractionType {
     ARCHERY(ArcheryAttraction.class, ArcheryAttraction::new),
     SHOOT_SNOWMEN(ShootSnowmenAttraction.class, ShootSnowmenAttraction::new),
     TRADE_CHAIN(TradeChainAttraction.class, TradeChainAttraction::new),
+    PARKOUR(ParkourAttraction.class, ParkourAttraction::new),
     ;
 
     public final Class<? extends Attraction> type;
