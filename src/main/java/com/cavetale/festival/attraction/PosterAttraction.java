@@ -1,6 +1,8 @@
 package com.cavetale.festival.attraction;
 
 import com.cavetale.area.struct.Area;
+import com.cavetale.core.event.hud.PlayerHudEvent;
+import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.poster.PosterPlugin;
 import com.cavetale.poster.save.Poster;
@@ -8,8 +10,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Map;
 import java.util.UUID;
+import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
@@ -29,7 +32,7 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
     private BlockFace face;
     private BlockFace right; // +x
     private Duration playTime = Duration.ofMinutes(5);
-    private long shownTime = -1;
+    private long secondsLeft;
 
     protected PosterAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
@@ -61,7 +64,23 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
         }
         this.areaNames.add("block");
         this.areaNames.add("face");
-        setPoster("PumpkinShinePoster");
+        this.intKeys.add("time");
+        this.stringKeys.add("poster");
+    }
+
+    @Override
+    protected void onEnable() {
+        Map<String, Object> raw = getFirstArea().getRaw() != null
+            ? getFirstArea().getRaw()
+            : Map.of();
+        if (raw.get("time") instanceof Number number) {
+            this.playTime = Duration.ofSeconds(number.intValue());
+        }
+        if (raw.get("poster") instanceof String posterName) {
+            setPoster(posterName);
+        } else {
+            debugLine("Missing value: poster");
+        }
     }
 
     @Override
@@ -189,11 +208,7 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
             timeout(player);
             return State.IDLE;
         }
-        long secondsLeft = (timeLeft.toMillis() - 1) / 1000L + 1L;
-        if (secondsLeft != shownTime) {
-            shownTime = secondsLeft;
-            player.sendActionBar(makeProgressComponent((int) secondsLeft));
-        }
+        secondsLeft = (timeLeft.toMillis() - 1) / 1000L + 1L;
         return null;
     }
 
@@ -259,7 +274,6 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
         PLAY {
             @Override protected void enter(PosterAttraction instance) {
                 instance.saveTag.playStarted = System.currentTimeMillis();
-                instance.shownTime = -1;
                 instance.rollPoster();
                 instance.spawnAllPosters();
             }
@@ -299,6 +313,15 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
 
     public void setPoster(String name) {
         PosterPlugin posterPlugin = (PosterPlugin) Bukkit.getPluginManager().getPlugin("Poster");
-        this.poster = Objects.requireNonNull(posterPlugin.findPosterNamed(name));
+        this.poster = posterPlugin.findPosterNamed(name);
+        if (poster == null) debugLine("Poster not found: " + name);
+    }
+
+    @Override
+    public void onPlayerHud(PlayerHudEvent event) {
+        event.bossbar(PlayerHudPriority.HIGHEST,
+                      makeProgressComponent((int) secondsLeft),
+                      BossBar.Color.RED, BossBar.Overlay.PROGRESS,
+                      (float) secondsLeft / (float) playTime.toSeconds());
     }
 }
