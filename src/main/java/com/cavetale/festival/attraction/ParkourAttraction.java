@@ -139,7 +139,7 @@ public final class ParkourAttraction extends Attraction<ParkourAttraction.SaveTa
             victory(player);
             prepareReward(player, true);
             session.setCooldown(this, completionCooldown);
-            Duration time = Duration.ofMillis(now - System.currentTimeMillis());
+            Duration time = Duration.ofMillis(now - saveTag.gameStarted);
             player.sendMessage(booth.format(String.format("You completed in %02d:%02d.%03d",
                                                           time.toMinutes(),
                                                           time.toSeconds() % 60L,
