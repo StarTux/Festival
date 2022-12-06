@@ -238,8 +238,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void fail(Player player, String msg) {
-        player.showTitle(Title.title(text(Unicode.subscript("try again"), DARK_RED),
-                                     text(msg, DARK_RED)));
+        player.showTitle(Title.title(empty(), text(msg, DARK_RED)));
         player.sendMessage(text(msg, RED));
         booth.getFailMelody().play(plugin, player);
         festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
@@ -298,6 +297,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             : null;
         if (player == null) return null;
         if (!isInArea(player.getLocation())) {
+            fail(player, "You left the game area");
             festival.sessionOf(player).setCooldown(this, Duration.ofMinutes(1));
             stop();
             return null;
