@@ -47,6 +47,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
     protected long secondsLeft;
     protected Vec3i respawnVector = Vec3i.ZERO;
     protected final List<Cuboid> forbiddenZones = new ArrayList<>();
+    protected int maxMissed = 3;
 
     @RequiredArgsConstructor
     public enum TargetMob {
@@ -191,13 +192,12 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         if (targetMobData == null) return;
         boolean hasPassengers = !hitEntity.getPassengers().isEmpty();
         removeEntity(hitEntity);
+        targetMobData.uuids.remove(uuid);
         if (hasPassengers) {
-            fail(player, "Do not hit targets carrying kittens");
-            saveTag.wrong += 1;
-            changeState(State.IDLE);
+            player.sendActionBar(text("Do not hit targets carrying kittens", DARK_RED));
+            saveTag.missed += 1;
         } else {
             confetti(hitEntity.getLocation());
-            targetMobData.uuids.remove(uuid);
             progress(player);
             saveTag.score += 1;
         }
@@ -226,7 +226,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         secondsLeft = Math.max(0, (then - now - 1) / 1000L + 1L);
         if (secondsLeft <= 0L) {
             Session session = festival.sessionOf(player);
-            boolean perfectRound = saveTag.missed == 0 && saveTag.wrong == 0;
+            boolean perfectRound = saveTag.missed == 0;
             if (perfectRound) {
                 perfect(player);
                 prepareReward(player, true);
@@ -240,8 +240,8 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             }
             return State.IDLE;
         }
-        if (saveTag.missed >= 10) {
-            fail(player, "Too many targets escaped");
+        if (saveTag.missed > maxMissed) {
+            fail(player, "You missed too many targets");
             return State.IDLE;
         }
         for (TargetMob targetMob : TargetMob.values()) {
@@ -317,6 +317,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                             c.setAware(false);
                             c.setBaby();
                             c.setSilent(true);
+                            c.setGlowing(true);
                             Entities.setTransient(c);
                         });
                     if (cat != null) mob.addPassenger(cat);
@@ -340,7 +341,6 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 instance.saveTag.score = 0;
                 instance.saveTag.spawned = 0;
                 instance.saveTag.missed = 0;
-                instance.saveTag.wrong = 0;
                 instance.saveTag.spawnCooldown = 0;
             }
 
@@ -369,7 +369,6 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         protected int score;
         protected int spawned;
         protected int missed;
-        protected int wrong;
         protected int spawnCooldown;
         protected Map<String, TargetMobData> targetMobs = new HashMap<>();
     }
@@ -392,7 +391,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
     @Override
     public void onPlayerHud(PlayerHudEvent event) {
         event.bossbar(PlayerHudPriority.HIGHEST,
-                      makeProgressComponent((int) secondsLeft, VanillaEffects.SPEED, saveTag.missed, 10),
+                      makeProgressComponent((int) secondsLeft, VanillaEffects.SPEED, saveTag.missed, maxMissed),
                       BossBar.Color.RED, BossBar.Overlay.PROGRESS,
                       (float) secondsLeft / (float) GAME_TIME.toSeconds());
     }
