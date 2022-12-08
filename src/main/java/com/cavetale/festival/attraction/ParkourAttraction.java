@@ -131,6 +131,10 @@ public final class ParkourAttraction extends Attraction<ParkourAttraction.SaveTa
     protected State tickGame() {
         Player player = getCurrentPlayer();
         if (player == null || !isInArea(player.getLocation())) return State.IDLE;
+        if (player.isFlying() || player.isGliding() || player.isInsideVehicle()) {
+            fail(player, "No flying");
+            return State.IDLE;
+        }
         final long now = System.currentTimeMillis();
         final long then = saveTag.gameStarted + gameTime.toMillis();
         secondsLeft = Math.max(0, (then - now - 1) / 1000L + 1L);
