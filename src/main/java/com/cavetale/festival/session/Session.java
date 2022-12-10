@@ -80,6 +80,14 @@ public final class Session {
         tag.prizesWaiting.put(attraction.getUniqueKey(), 1);
     }
 
+    public int getProgress() {
+        return tag.progress;
+    }
+
+    public void setProgress(int progress) {
+        tag.progress = progress;
+    }
+
     public void clearPrizeWaiting(Attraction attraction) {
         tag.prizesWaiting.remove(attraction.getUniqueKey());
     }
@@ -98,5 +106,6 @@ public final class Session {
         protected final Set<String> uniquesGot = new HashSet<>();
         protected final Map<String, Integer> prizesWaiting = new HashMap<>(); // 1 = regular, 2 = unique
         protected final Set<String> collection = new HashSet<>(); // Festival specific
+        protected int progress; // Festival specific
     }
 }

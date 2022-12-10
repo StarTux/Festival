@@ -1,6 +1,7 @@
 package com.cavetale.festival.booth;
 
 import com.cavetale.core.connect.NetworkServer;
+import com.cavetale.core.event.item.PlayerReceiveItemsEvent;
 import com.cavetale.core.font.GuiOverlay;
 import com.cavetale.festival.Festival;
 import com.cavetale.festival.FestivalTheme;
@@ -12,6 +13,9 @@ import com.cavetale.festival.gui.Gui;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.item.music.Melody;
+import com.cavetale.mytems.util.Items;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.YearMonth;
@@ -20,32 +24,48 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import static com.cavetale.core.util.CamelCase.toCamelCase;
 import static com.cavetale.festival.FestivalPlugin.plugin;
 import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
+import static net.kyori.adventure.text.format.TextColor.color;
+import static net.kyori.adventure.text.format.TextDecoration.*;
 
 /**
  * Christmas 2022.
  */
 public final class WintersHearth implements Booth {
-    public static final WintersHearth INSTANCE = new WintersHearth();
+    public static final FestivalTheme THEME = FestivalTheme.CHRISTMAS;
     public static final Festival FESTIVAL = new Festival("christmas2022",
                                                          "Xmas",
-                                                         FestivalTheme.CHRISTMAS,
-                                                         s -> INSTANCE,
+                                                         THEME,
+                                                         WintersHearth::new,
                                                          WintersHearth::onComplete,
                                                          WintersHearth::onLoad,
                                                          WintersHearth::onUnload,
                                                          WintersHearth::openGui);
+    private String name;
     private int day;
     private static int currentDay;
     private static final Map<Integer, List<String>> DAY_MAP = new HashMap<>();
+    private static final int YEAR = 2022;
+    private static YearMonth month;
+    private static List<ItemStack> dailyPrizes = List.of();
+
+    private WintersHearth(final String name) {
+        this.name = name;
+    }
 
     @RequiredArgsConstructor
     public enum XmasPresent {
@@ -142,7 +162,7 @@ public final class WintersHearth implements Booth {
 
         public ItemStack makeItemStack() {
             if (itemStack == null) {
-                itemStack = mytems.createIcon(List.of(FestivalTheme.CHRISTMAS.format(itemName)));
+                itemStack = mytems.createIcon(List.of(THEME.format(itemName)));
                 itemStack.editMeta(meta -> {
                         meta.addItemFlags(ItemFlag.values());
                         for (Enchantment ench : Enchantment.values()) {
@@ -156,11 +176,10 @@ public final class WintersHearth implements Booth {
 
     private static void onLoad() {
         DAY_MAP.clear();
-        final int year = 2022;
-        final YearMonth month = YearMonth.of(year, Month.DECEMBER);
+        month = YearMonth.of(YEAR, Month.DECEMBER);
         LocalDateTime now = LocalDateTime.now();
         currentDay = 0;
-        if (now.getYear() == year) {
+        if (now.getYear() == YEAR) {
             for (int i = 25; i > 0; i -= 1) {
                 LocalDateTime date = month.atDay(i).atTime(12, 0, 0);
                 if (now.isAfter(date)) {
@@ -174,6 +193,33 @@ public final class WintersHearth implements Booth {
             currentDay = 25;
             FESTIVAL.logInfo("Creative CurrentDay = " + currentDay);
         }
+        dailyPrizes = List.of(new ItemStack[] {
+                Mytems.RUBY.createItemStack(10), // 1
+                new ItemStack(Material.DIAMOND, 64), // 2
+                new ItemStack(Material.TNT, 64), // 3
+                Mytems.KITTY_COIN.createItemStack(3), // 4, Advent
+                new ItemStack(Material.OCHRE_FROGLIGHT, 64), // 5
+                Mytems.MOB_CATCHER.createItemStack(64), // 6
+                new ItemStack(Material.GLOWSTONE, 64), // 7
+                new ItemStack(Material.BONE_BLOCK, 64), // 8
+                new ItemStack(Material.AMETHYST_SHARD, 64), // 9
+                new ItemStack(Material.ALLAY_SPAWN_EGG), // 10
+                Mytems.DIAMOND_COIN.createItemStack(), // 11, Advent
+                new ItemStack(Material.ANCIENT_DEBRIS, 16), // 12
+                new ItemStack(Material.GOLD_INGOT, 64), // 13
+                new ItemStack(Material.GOLDEN_APPLE, 64), // 14
+                new ItemStack(Material.MOSS_BLOCK, 64), // 15
+                new ItemStack(Material.COPPER_BLOCK, 64), // 16
+                new ItemStack(Material.SPORE_BLOSSOM, 64), // 17
+                Mytems.RUBY_COIN.createItemStack(), // 18, Avent
+                new ItemStack(Material.PEARLESCENT_FROGLIGHT, 64), // 19
+                new ItemStack(Material.GHAST_TEAR, 64), // 20
+                new ItemStack(Material.SPYGLASS), // 21
+                new ItemStack(Material.VERDANT_FROGLIGHT, 64), // 22
+                new ItemStack(Material.MUSIC_DISC_5), // 23
+                new ItemStack(Material.RECOVERY_COMPASS), // 24
+                new ItemStack(Material.BUDDING_AMETHYST), // 25
+            });
         Bukkit.getScheduler().runTask(plugin(), () -> {
                 for (int i = 0; i <= 25; i += 1) {
                     List<String> names = DAY_MAP.getOrDefault(i, List.of());
@@ -281,18 +327,104 @@ public final class WintersHearth implements Booth {
     }
 
     private static void openGui(Player player) {
-        final int size = 3 * 9;
-        Gui gui = new Gui().size(size);
-        var title = text("Christmas Inventory Day " + currentDay);
-        GuiOverlay.Builder overlay = GuiOverlay.BLANK.builder(size, BLUE).title(title);
-        gui.title(overlay.build());
-        int nextIndex = 0;
         Session session = FESTIVAL.sessionOf(player);
+        final int size = 6 * 9;
+        Gui gui = new Gui().size(size);
+        GuiOverlay.Builder builder = GuiOverlay.builder(size)
+            .layer(GuiOverlay.BLANK, color(0x8080FF))
+            .layer(GuiOverlay.TOP_BAR, color(0xFFFFFF))
+            .title(THEME.format("Advent Calendar " + YEAR).decorate(BOLD));
+        int weekNumber = 1;
+        final int doorsOpened = session.getProgress();
+        for (int i = 0; i < 25; i += 1) {
+            final int prizeIndex = i;
+            final int dayOfChristmas = i + 1;
+            LocalDate date = month.atDay(dayOfChristmas);
+            DayOfWeek dayOfWeek = date.getDayOfWeek();
+            if (i > 0 && dayOfWeek == DayOfWeek.MONDAY) weekNumber += 1;
+            int dayNumber = dayOfWeek.getValue();
+            int guiIndex = weekNumber * 9 + (dayNumber - 1) + 1;
+            boolean open = doorsOpened >= dayOfChristmas;
+            ItemStack item;
+            int dailyAttractions = 0;
+            int dailyFinishedAttraction = 0;
+            for (Attraction<?> attraction : FESTIVAL.getAttractions()) {
+                if (attraction.getBooth() instanceof WintersHearth booth && booth.day == dayOfChristmas) {
+                    dailyAttractions += 1;
+                    if (session.isUniqueLocked(attraction)) {
+                        dailyFinishedAttraction += 1;
+                    }
+                }
+            }
+            final boolean nextToOpen = i == doorsOpened;
+            final boolean canOpen = nextToOpen && currentDay >= dayOfChristmas && dailyPrizes.size() > prizeIndex
+                && dailyFinishedAttraction >= dailyAttractions;
+            if (open) {
+                item = Mytems.CROSSED_CHECKBOX.createItemStack(dayOfChristmas);
+            } else if (nextToOpen) {
+                item = canOpen
+                    ? Mytems.GOLDEN_KEY.createItemStack(dayOfChristmas)
+                    : Mytems.GOLDEN_KEYHOLE.createItemStack(dayOfChristmas);
+            } else {
+                item = Mytems.CHECKBOX.createItemStack(dayOfChristmas);
+            }
+            TextColor dayColor = i % 2 == 0 ? color(0xE40010) : color(0x00B32C);
+            builder.highlightSlot(guiIndex, color(0x8080FF));
+            item = Items.text(item, List.of(Component.text(toCamelCase(" ", dayOfWeek)
+                                                           + " " + dayOfChristmas, dayColor),
+                                            textOfChildren(text("Progress ", GRAY),
+                                                           (dailyAttractions > 0
+                                                            ? text(dailyFinishedAttraction + "/" + dailyAttractions,
+                                                                   canOpen ? GREEN : RED)
+                                                            : text("Coming Soon", RED)))));
+            gui.setItem(guiIndex, item, canOpen
+                        ? (click -> {
+                                if (!click.isLeftClick()) return;
+                                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK,
+                                                 SoundCategory.MASTER, 0.5f, 2.0f);
+                                session.setProgress(doorsOpened + 1);
+                                session.save();
+                                giveInGui(player, dailyPrizes.get(prizeIndex).clone());
+                            })
+                        : (click -> {
+                                if (!click.isLeftClick()) return;
+                                player.playSound(player.getLocation(), Sound.ENTITY_ITEM_FRAME_REMOVE_ITEM,
+                                                 SoundCategory.MASTER, 0.5f, 0.75f);
+                            }));
+        }
+        int nextIndex = 4;
         for (XmasPresent present : XmasPresent.values()) {
             if (session.getCollection().contains(present.key)) {
-                gui.setItem(nextIndex, present.makeItemStack());
+                gui.setItem(nextIndex++, present.makeItemStack());
             }
         }
+        gui.title(builder.build());
         gui.open(player);
+    }
+
+    private static void giveInGui(Player player, ItemStack prize, ItemStack... extras) {
+        final int size = 27;
+        GuiOverlay.Builder titleBuilder = GuiOverlay.BLANK.builder(size, DARK_RED)
+            .title(THEME.format("Advent Calendar " + YEAR).decorate(BOLD));
+        Gui gui = new Gui();
+        gui.size(size);
+        gui.setItem(13, prize);
+        int[] indexes = {
+            22, 4, 12, 14,
+        };
+        for (int i = 0; i < extras.length; i += 1) {
+            if (i >= indexes.length) {
+                throw new IllegalStateException("Index exceeded: " + i + "/" + indexes.length);
+            }
+            gui.setItem(indexes[i], extras[i]);
+        }
+        gui.setEditable(true);
+        gui.title(titleBuilder.build());
+        gui.onClose(evt -> {
+                PlayerReceiveItemsEvent.receiveInventory(player, gui.getInventory());
+                player.playSound(player.getLocation(), Sound.BLOCK_CHEST_CLOSE, SoundCategory.BLOCKS, 1.0f, 1.0f);
+            });
+        gui.open(player);
+        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
     }
 }

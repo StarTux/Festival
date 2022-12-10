@@ -55,6 +55,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             .description("Reset player session")
             .completers(CommandArgCompleter.PLAYER_CACHE)
             .playerCaller(this::sessionReset);
+        sessionNode.addChild("complete").arguments("<player>")
+            .description("Complete player session")
+            .completers(CommandArgCompleter.PLAYER_CACHE)
+            .playerCaller(this::sessionComplete);
         CommandNode attractionNode = rootNode.addChild("attraction")
             .description("Attraction subcommands");
         attractionNode.addChild("create").arguments("<type> <name>")
@@ -162,6 +166,20 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         session.save();
         festival.sessions.clear(target.uuid);
         player.sendMessage(text("Session reset: " + target.getName(), YELLOW));
+        return true;
+    }
+
+    private boolean sessionComplete(Player player, String[] args) {
+        if (args.length != 1) return false;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("No festival here!");
+        PlayerCache target = PlayerCache.require(args[0]);
+        Session session = festival.sessions.of(target);
+        for (Attraction<?> attraction : festival.getAttractions()) {
+            session.lockUnique(attraction);
+        }
+        session.save();
+        player.sendMessage(text("Session completed: " + target.getName(), YELLOW));
         return true;
     }
 
