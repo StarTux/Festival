@@ -1,6 +1,7 @@
 package com.cavetale.festival.attraction;
 
 import lombok.RequiredArgsConstructor;
+import org.bukkit.map.MapCursor;
 
 @RequiredArgsConstructor
 public enum AttractionType {
@@ -49,5 +50,12 @@ public enum AttractionType {
 
     public Attraction make(AttractionConfiguration config) {
         return ctor.make(config);
+    }
+
+    public MapCursor.Type getMapCursorIcon() {
+        return switch (this) {
+        case TRADE_CHAIN -> MapCursor.Type.WHITE_CROSS;
+        default -> MapCursor.Type.RED_X;
+        };
     }
 }

@@ -427,4 +427,9 @@ public final class WintersHearth implements Booth {
         gui.open(player);
         player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, SoundCategory.BLOCKS, 1.0f, 1.0f);
     }
+
+    @Override
+    public Component getMapCursorCaption() {
+        return text(day, AQUA);
+    }
 }

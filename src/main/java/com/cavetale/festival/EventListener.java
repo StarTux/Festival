@@ -16,6 +16,7 @@ import com.cavetale.mytems.event.music.PlayerMelodyCompleteEvent;
 import com.cavetale.mytems.event.music.PlayerOpenMusicalInstrumentEvent;
 import com.destroystokyo.paper.event.entity.ThrownEggHatchEvent;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
@@ -180,12 +181,14 @@ public final class EventListener implements Listener {
             } else if (completed && !pickedUp) {
                 cursorType = MapCursor.Type.RED_MARKER;
             } else {
-                cursorType = MapCursor.Type.RED_X;
+                cursorType = attraction.getType().getMapCursorIcon();
             }
             MapCursor mapCursor = Cursors.make(cursorType,
                                                vec.x - event.getMinX(),
                                                vec.z - event.getMinZ(),
                                                8);
+            Component caption = attraction.getBooth().getMapCursorCaption();
+            if (caption != null) mapCursor.caption(caption);
             event.getCursors().addCursor(mapCursor);
         }
     }

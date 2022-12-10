@@ -58,4 +58,8 @@ public interface Booth {
     default Melody getSuccessMelody() {
         return Music.TREASURE.melody;
     }
+
+    default Component getMapCursorCaption() {
+        return null;
+    }
 }
