@@ -229,15 +229,13 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             boolean perfectRound = saveTag.missed == 0;
             if (perfectRound) {
                 perfect(player);
-                prepareReward(player, true);
-                session.setCooldown(this, completionCooldown);
             } else {
                 victory(player);
-                prepareReward(player, false);
-                session.setCooldown(this, session.isUniqueLocked(this)
-                                    ? completionCooldown
-                                    : Duration.ofSeconds(30));
             }
+            prepareReward(player, true);
+            session.setCooldown(this, session.isUniqueLocked(this)
+                                ? completionCooldown
+                                : Duration.ofSeconds(30));
             return State.IDLE;
         }
         if (saveTag.missed > maxMissed) {
