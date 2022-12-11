@@ -269,7 +269,8 @@ public final class WintersHearth implements Booth {
         if (currentDay < day) {
             attraction.setDisabled(true);
         }
-        DAY_MAP.computeIfAbsent(day, d -> new ArrayList<>()).add(attraction.getName());
+        String entry = attraction.getType().shortcut + "|" + attraction.getName();
+        DAY_MAP.computeIfAbsent(day, d -> new ArrayList<>()).add(entry);
     }
 
     @Override

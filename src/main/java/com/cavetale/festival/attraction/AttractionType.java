@@ -5,27 +5,28 @@ import org.bukkit.map.MapCursor;
 
 @RequiredArgsConstructor
 public enum AttractionType {
-    DUMMY(DummyAttraction.class, DummyAttraction::new),
-    REPEAT_MELODY(RepeatMelodyAttraction.class, RepeatMelodyAttraction::new),
-    SHOOT_TARGET(ShootTargetAttraction.class, ShootTargetAttraction::new),
-    FIND_SPIDERS(FindSpidersAttraction.class, FindSpidersAttraction::new),
-    OPEN_CHEST(OpenChestAttraction.class, OpenChestAttraction::new),
-    FIND_BLOCKS(FindBlocksAttraction.class, FindBlocksAttraction::new),
-    RACE(RaceAttraction.class, RaceAttraction::new),
-    MUSIC_HERO(MusicHeroAttraction.class, MusicHeroAttraction::new),
-    POSTER(PosterAttraction.class, PosterAttraction::new),
-    SNOWBALL_FIGHT(SnowballFightAttraction.class, SnowballFightAttraction::new),
-    ZOMBIE_FIGHT(ZombieFightAttraction.class, ZombieFightAttraction::new),
-    MEMORY(MemoryAttraction.class, MemoryAttraction::new),
-    FIND_GHOSTS(FindGhostsAttraction.class, FindGhostsAttraction::new),
-    CARVE_PUMPKIN(CarvePumpkinAttraction.class, CarvePumpkinAttraction::new),
-    PET_PILE(PetPileAttraction.class, PetPileAttraction::new),
-    ARCHERY(ArcheryAttraction.class, ArcheryAttraction::new),
-    SHOOT_SNOWMEN(ShootSnowmenAttraction.class, ShootSnowmenAttraction::new),
-    TRADE_CHAIN(TradeChainAttraction.class, TradeChainAttraction::new),
-    PARKOUR(ParkourAttraction.class, ParkourAttraction::new),
+    DUMMY("DUM", DummyAttraction.class, DummyAttraction::new),
+    REPEAT_MELODY("MEL", RepeatMelodyAttraction.class, RepeatMelodyAttraction::new),
+    SHOOT_TARGET("SHT", ShootTargetAttraction.class, ShootTargetAttraction::new),
+    FIND_SPIDERS("SPI", FindSpidersAttraction.class, FindSpidersAttraction::new),
+    OPEN_CHEST("CHE", OpenChestAttraction.class, OpenChestAttraction::new),
+    FIND_BLOCKS("FBL", FindBlocksAttraction.class, FindBlocksAttraction::new),
+    RACE("RAC", RaceAttraction.class, RaceAttraction::new),
+    MUSIC_HERO("MHE", MusicHeroAttraction.class, MusicHeroAttraction::new),
+    POSTER("POS", PosterAttraction.class, PosterAttraction::new),
+    SNOWBALL_FIGHT("SNF", SnowballFightAttraction.class, SnowballFightAttraction::new),
+    ZOMBIE_FIGHT("ZMB", ZombieFightAttraction.class, ZombieFightAttraction::new),
+    MEMORY("MEM", MemoryAttraction.class, MemoryAttraction::new),
+    FIND_GHOSTS("GHO", FindGhostsAttraction.class, FindGhostsAttraction::new),
+    CARVE_PUMPKIN("PUM", CarvePumpkinAttraction.class, CarvePumpkinAttraction::new),
+    PET_PILE("PET", PetPileAttraction.class, PetPileAttraction::new),
+    ARCHERY("ARC", ArcheryAttraction.class, ArcheryAttraction::new),
+    SHOOT_SNOWMEN("SSM", ShootSnowmenAttraction.class, ShootSnowmenAttraction::new),
+    TRADE_CHAIN("TRC", TradeChainAttraction.class, TradeChainAttraction::new),
+    PARKOUR("PRK", ParkourAttraction.class, ParkourAttraction::new),
     ;
 
+    public final String shortcut;
     public final Class<? extends Attraction> type;
     private final AttractionConstructor ctor;
 
