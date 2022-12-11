@@ -24,6 +24,7 @@ public enum AttractionType {
     SHOOT_SNOWMEN("SSM", ShootSnowmenAttraction.class, ShootSnowmenAttraction::new),
     TRADE_CHAIN("TRC", TradeChainAttraction.class, TradeChainAttraction::new),
     PARKOUR("PRK", ParkourAttraction.class, ParkourAttraction::new),
+    TIC_TAC_TOE("TTT", TicTacToeAttraction.class, TicTacToeAttraction::new),
     ;
 
     public final String shortcut;
