@@ -34,6 +34,7 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
+import static com.cavetale.core.font.Unicode.superscript;
 import static com.cavetale.core.util.CamelCase.toCamelCase;
 import static com.cavetale.festival.FestivalPlugin.plugin;
 import static net.kyori.adventure.text.Component.text;
@@ -430,6 +431,6 @@ public final class WintersHearth implements Booth {
 
     @Override
     public Component getMapCursorCaption() {
-        return text(day, AQUA);
+        return text(superscript(day), AQUA);
     }
 }
