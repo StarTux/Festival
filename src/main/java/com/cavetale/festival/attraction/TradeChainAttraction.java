@@ -69,7 +69,11 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                                           (want != null
                                            ? booth.format(" Thank you again for your help! ")
                                            : booth.format(" Thank you again for visiting me! ")),
-                                          Mytems.HEART);
+                                          Mytems.HEART,
+                                          newline(), newline(),
+                                          (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))
+                                           .hoverEvent(showText(text("View Inventory", BLUE)))
+                                           .clickEvent(runCommand("/fest inv"))));
                 } else {
                     page = textOfChildren(Mytems.VILLAGER_FACE,
                                           booth.format(" " + dialogue + " "),
@@ -82,12 +86,17 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                                           space(),
                                           (DefaultFont.NO_BUTTON.component
                                            .clickEvent(runCommand("/fest no " + name))
-                                           .hoverEvent(showText(text("Maybe Later", RED)))));
+                                           .hoverEvent(showText(text("Maybe Later", RED)))),
+                                          newline(), newline(),
+                                          (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))
+                                           .hoverEvent(showText(text("View Inventory", BLUE)))
+                                           .clickEvent(runCommand("/fest inv"))));
                 }
                 meta.setAuthor("Cavetale");
                 meta.title(text("Festival"));
                 meta.pages(List.of(page));
             });
+        player.closeInventory();
         player.openBook(book);
     }
 
@@ -106,25 +115,44 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                     page = textOfChildren(Mytems.VILLAGER_FACE,
                                           booth.format(" Looks like you don't have anything that could help me."
                                                        + " Thanks for trying anyway. "),
-                                          Mytems.SMILE);
+                                          Mytems.SMILE,
+                                          newline(), newline(),
+                                          (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))
+                                           .hoverEvent(showText(text("View Inventory", BLUE)))
+                                           .clickEvent(runCommand("/fest inv"))));
                     meta.setAuthor("Cavetale");
                     meta.title(text("Festival"));
                     meta.pages(List.of(page));
                 });
+            player.closeInventory();
             player.openBook(book);
             return;
         }
-        player.sendMessage(textOfChildren(Mytems.VILLAGER_FACE,
-                                          (give != null
-                                           ? booth.format(" Thank you so much, this is perfect! Take this instead.")
-                                           : booth.format(" Thank you so much, this is perfect!"))));
         session.getCollection().remove(want);
         if (give != null) {
             session.getCollection().add(give);
-            festival.openInventory(player);
         }
         prepareFirstCompletionReward(player); // saves
         perfect(player);
+        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
+        book.editMeta(m -> {
+                BookMeta meta = (BookMeta) m;
+                final Component page;
+                page = textOfChildren(Mytems.VILLAGER_FACE,
+                                      (give != null
+                                       ? booth.format(" Thank you so much, this is perfect! Take this instead.")
+                                       : booth.format(" Thank you so much, this is perfect!")),
+                                      Mytems.HEART,
+                                      newline(), newline(),
+                                      (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))
+                                       .hoverEvent(showText(text("View Inventory", BLUE)))
+                                       .clickEvent(runCommand("/fest inv"))));
+                meta.setAuthor("Cavetale");
+                meta.title(text("Festival"));
+                meta.pages(List.of(page));
+            });
+        player.closeInventory();
+        player.openBook(book);
     }
 
     @Override
