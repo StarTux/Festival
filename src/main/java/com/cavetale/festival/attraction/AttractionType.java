@@ -25,6 +25,7 @@ public enum AttractionType {
     TRADE_CHAIN("TRC", TradeChainAttraction.class, TradeChainAttraction::new),
     PARKOUR("PRK", ParkourAttraction.class, ParkourAttraction::new),
     TIC_TAC_TOE("TTT", TicTacToeAttraction.class, TicTacToeAttraction::new),
+    GUESS_NUMBER("GNU", GuessNumberAttraction.class, GuessNumberAttraction::new),
     ;
 
     public final String shortcut;

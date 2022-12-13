@@ -671,4 +671,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     public final Area getFirstArea() {
         return allAreas.get(0);
     }
+
+    /**
+     * Command via /fest send <attraction> <args...>
+     * The <attraction> argument has already been omitted, so we
+     * receive only the extraneous args.  The player has yet to be
+     * verified to be the current player.
+     */
+    public void onCommand(Player player, String[] args) { }
 }

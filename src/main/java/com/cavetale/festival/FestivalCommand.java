@@ -2,6 +2,7 @@ package com.cavetale.festival;
 
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.festival.attraction.Attraction;
+import java.util.Arrays;
 import org.bukkit.entity.Player;
 
 public final class FestivalCommand extends AbstractCommand<FestivalPlugin> {
@@ -20,6 +21,9 @@ public final class FestivalCommand extends AbstractCommand<FestivalPlugin> {
         rootNode.addChild("inv").hidden(true).denyTabCompletion()
             .description("Open inventory")
             .playerCaller(this::inv);
+        rootNode.addChild("send").hidden(true).denyTabCompletion()
+            .description("Send message to attraction")
+            .playerCaller(this::send);
     }
 
     protected boolean yes(Player player, String[] args) {
@@ -39,6 +43,14 @@ public final class FestivalCommand extends AbstractCommand<FestivalPlugin> {
         Festival festival = plugin.getFestival(player.getWorld());
         if (festival == null) return true;
         festival.openInventory(player);
+        return true;
+    }
+
+    protected boolean send(Player player, String[] args) {
+        if (args.length == 0) return true;
+        Attraction attraction = plugin.getAttraction(player.getWorld(), args[0]);
+        if (attraction == null) return true;
+        attraction.onCommand(player, Arrays.copyOfRange(args, 1, args.length));
         return true;
     }
 }

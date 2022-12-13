@@ -54,6 +54,9 @@ public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
 
     @Override
     protected void onTick() {
+        final long now = System.currentTimeMillis();
+        final long then = saveTag.gameStarted + GAME_TIME.toMillis();
+        secondsLeft = Math.max(0, (then - now - 1) / 1000L + 1L);
         State newState = saveTag.state.tick(this);
         if (newState != null) {
             changeState(newState);
@@ -75,10 +78,7 @@ public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
 
     protected State tickGame() {
         Player player = getCurrentPlayer();
-        if (player == null || !isInArea(player.getLocation())) return State.IDLE;
-        final long now = System.currentTimeMillis();
-        final long then = saveTag.gameStarted + GAME_TIME.toMillis();
-        secondsLeft = Math.max(0, (then - now - 1) / 1000L + 1L);
+        if (player == null) return State.IDLE;
         if (secondsLeft <= 0L) {
             Session session = festival.sessionOf(player);
             boolean perfectRound = saveTag.score >= saveTag.total;
