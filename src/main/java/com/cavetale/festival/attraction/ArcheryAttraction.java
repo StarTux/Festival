@@ -48,6 +48,9 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
     protected Vec3i respawnVector = Vec3i.ZERO;
     protected final List<Cuboid> forbiddenZones = new ArrayList<>();
     protected int maxMissed = 3;
+    private int animationTicks = 0;
+    private boolean doAnimate = false;
+    private float catYaw = 0.0f;
 
     @RequiredArgsConstructor
     public enum TargetMob {
@@ -242,6 +245,10 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             fail(player, "You missed too many targets");
             return State.IDLE;
         }
+        doAnimate = animationTicks++ >= 4;
+        if (doAnimate) animationTicks = 0;
+        catYaw += 12f;
+        if (catYaw >= 180f) catYaw -= 360f;
         for (TargetMob targetMob : TargetMob.values()) {
             tickTargetMob(player, targetMob);
         }
@@ -282,6 +289,14 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 data.uuids.remove(uuid);
                 continue;
             }
+            if (!entity.getPassengers().isEmpty() && entity.getPassengers().get(0) instanceof Cat cat) {
+                if (doAnimate) {
+                    List<Cat.Type> types = List.of(Cat.Type.values());
+                    int catTypeIndex = types.indexOf(cat.getCatType());
+                    cat.setCatType(types.get((catTypeIndex + 1) % types.size()));
+                }
+                cat.setRotation(catYaw, 0.0f);
+            }
             Location mobLocation = entity.getLocation();
             if (to.contains(mobLocation)) {
                 if (entity.getPassengers().isEmpty()) {
@@ -315,7 +330,6 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                             c.setAware(false);
                             c.setBaby();
                             c.setSilent(true);
-                            c.setGlowing(true);
                             Entities.setTransient(c);
                         });
                     if (cat != null) mob.addPassenger(cat);
