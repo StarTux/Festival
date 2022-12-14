@@ -305,7 +305,14 @@ public final class WintersHearth implements Booth {
 
     private static final List<ItemStack> BONUS_PRIZE_POOL =
         List.of(Mytems.RUBY.createItemStack(1),
-                new ItemStack(Material.DIAMOND));
+                Mytems.COPPER_COIN.createItemStack(1),
+                Mytems.SILVER_COIN.createItemStack(1),
+                new ItemStack(Material.DIAMOND),
+                new ItemStack(Material.EMERALD),
+                new ItemStack(Material.COPPER_INGOT),
+                new ItemStack(Material.GOLD_INGOT),
+                new ItemStack(Material.IRON_INGOT),
+                new ItemStack(Material.LAPIS_LAZULI));
 
     @Override
     public List<ItemStack> getBonusPrizePool() {
