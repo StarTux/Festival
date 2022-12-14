@@ -89,8 +89,7 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
         Location location = block.getLocation().add(0.5, 0.5, 0.5);
         confetti(player, location);
         progress(player);
-        double roll = random.nextDouble();
-        boolean bingo = roll < 0.15;
+        boolean bingo = random.nextInt(3) == 0;
         giveReward(player, bingo);
         Session session = festival.sessionOf(player);
         if (bingo) {
