@@ -30,7 +30,7 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
  * Dummy attraction for the purpose of copy and paste.
  */
 public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.SaveTag> {
-    protected static final Duration GAME_TIME = Duration.ofSeconds(60);
+    protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 5);
     protected long secondsLeft;
     protected int width = 9;
     protected int height = 6;
