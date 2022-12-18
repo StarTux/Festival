@@ -198,6 +198,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         targetMobData.uuids.remove(uuid);
         if (hasPassengers) {
             player.sendActionBar(text("Do not hit targets carrying kittens", DARK_RED));
+            booth.getFailMelody().play(plugin, player);
             saveTag.missed += 1;
         } else {
             confetti(hitEntity.getLocation());
