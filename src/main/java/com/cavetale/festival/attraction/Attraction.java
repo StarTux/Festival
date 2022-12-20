@@ -292,9 +292,10 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     public abstract boolean isPlaying();
 
     public final Player getCurrentPlayer() {
-        Player player = saveTag.currentPlayer != null
-            ? Bukkit.getPlayer(saveTag.currentPlayer)
-            : null;
+        if (saveTag.currentPlayer == null || !isPlaying()) {
+            return null;
+        }
+        Player player = Bukkit.getPlayer(saveTag.currentPlayer);
         if (player == null) return null;
         if (!isInArea(player.getLocation())) {
             fail(player, "You left the game area");

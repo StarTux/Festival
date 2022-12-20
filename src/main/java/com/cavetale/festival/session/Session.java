@@ -48,7 +48,12 @@ public final class Session {
     }
 
     public void setCooldown(Attraction attraction, Duration duration) {
-        tag.cooldowns.put(attraction.getUniqueKey(), duration.toMillis() + System.currentTimeMillis());
+        long newValue = duration.toMillis() + System.currentTimeMillis();
+        Long oldValue = tag.cooldowns.get(attraction.getUniqueKey());
+        if (oldValue != null) {
+            newValue = Math.max(newValue, oldValue);
+        }
+        tag.cooldowns.put(attraction.getUniqueKey(), newValue);
     }
 
     public boolean isUniqueLocked(Attraction attraction) {
