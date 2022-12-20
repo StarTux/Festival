@@ -367,7 +367,7 @@ public final class WintersHearth implements Booth {
             }
             final boolean nextToOpen = i == doorsOpened;
             final boolean canOpen = nextToOpen && currentDay >= dayOfChristmas && dailyPrizes.size() > prizeIndex
-                && dailyFinishedAttraction >= dailyAttractions;
+                && dailyFinishedAttraction >= dailyAttractions && dailyAttractions > 0;
             if (open) {
                 item = Mytems.CROSSED_CHECKBOX.createItemStack(dayOfChristmas);
             } else if (nextToOpen) {
