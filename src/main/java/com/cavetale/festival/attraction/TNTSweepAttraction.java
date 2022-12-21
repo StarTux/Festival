@@ -246,8 +246,8 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
                         icon = Items.text(new ItemStack(Material.TNT),
                                           List.of(text("Boom! You lost.", RED)));
                     } else {
-                        icon = Mytems.CHECKBOX.createIcon(List.of(textOfChildren(Mytems.MOUSE_LEFT,
-                                                                                 text(" Reveal", GRAY))));
+                        icon = Mytems.CHECKBOX.createIcon(List.of(textOfChildren(Mytems.MOUSE_LEFT, text(" Reveal", GRAY)),
+                                                                  textOfChildren(Mytems.MOUSE_RIGHT, text(" Mark", GRAY))));
                     }
                 } else if (cell == BOOM) {
                     icon = Items.text(new ItemStack(Material.TNT),
