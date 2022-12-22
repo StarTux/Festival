@@ -161,9 +161,21 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
                 saveTag.snowmen.remove(uuid);
                 continue;
             }
+            if (!getMainArea().contains(snowman.getLocation())) {
+                snowman.remove();
+                saveTag.snowmen.remove(uuid);
+                continue;
+            }
             if (!snowman.isDerp()) {
                 alive += 1;
             }
+            var path = snowman.getPathfinder().getCurrentPath();
+            if (path != null && path.getFinalPoint().distanceSquared(snowman.getLocation()) > 2.0) {
+                continue;
+            }
+            List<Block> blocks = blocks();
+            Block target = blocks.get(random.nextInt(blocks.size()));
+            snowman.getPathfinder().moveTo(target.getLocation().add(0.5, 0.0, 0.5));
         }
         if (alive == 0) {
             clearMobs();
@@ -231,7 +243,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
         protected List<UUID> snowmen = new ArrayList<>();
     }
 
-    private void spawnMobs() {
+    private List<Block> blocks() {
         List<Block> blocks = new ArrayList<>();
         for (Vec3i vec : snowmanBlocks) {
             Block block = vec.toBlock(world);
@@ -239,6 +251,11 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
                 blocks.add(block);
             }
         }
+        return blocks;
+    }
+
+    private void spawnMobs() {
+        List<Block> blocks = blocks();
         Collections.shuffle(blocks, random);
         final int total = mobsPerWave;
         for (int i = 0; i < total; i += 1) {
@@ -246,7 +263,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
             final boolean derp = i < total / 3;
             Snowman snowman = world.spawn(block.getLocation().add(0.5, 0.0, 0.5), Snowman.class, s -> {
                     Entities.setTransient(s);
-                    s.getAttribute(GENERIC_MOVEMENT_SPEED).setBaseValue(0.0);
+                    s.getAttribute(GENERIC_MOVEMENT_SPEED).setBaseValue(0.15);
                     s.setDerp(derp);
                 });
             if (snowman != null) {
