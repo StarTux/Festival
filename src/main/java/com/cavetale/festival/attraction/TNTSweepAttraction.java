@@ -13,6 +13,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -36,6 +37,8 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
     protected long secondsLeft;
     protected int width = 9;
     protected int height = 6;
+    protected int size = width * height;
+    protected int bombs = 6; // size / 8;
     private static final int EMPTY = -1;
     private static final int TNT = -2;
     private static final int BOOM = -3;
@@ -49,6 +52,16 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
         }
         this.displayName = booth.format("TNT Sweep");
         this.description = text("Reveal slots but avoid the hidden TNT. Numbers indicate how much TNT is adjacent.");
+        this.intKeys.add("bombs");
+    }
+
+    @Override
+    protected void onEnable() {
+        Map<String, Object> raw = getFirstArea().getRaw();
+        if (raw == null) raw = Map.of();
+        if (raw.get("bombs") instanceof Number number) {
+            bombs = number.intValue();
+        }
     }
 
     @Override
@@ -211,7 +224,6 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
     }
 
     private void openGui(Player player) {
-        final int size = width * height;
         Gui gui = new Gui().size(size);
         final TextColor bg;
         final Component title;
@@ -303,8 +315,6 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
 
     private void makeBoard() {
         saveTag.board.clear();
-        final int size = width * height;
-        final int bombs = size / 8;
         saveTag.total = size - bombs;
         saveTag.score = 0;
         for (int i = 0; i < width * height; i += 1) {
