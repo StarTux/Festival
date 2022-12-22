@@ -30,7 +30,8 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
     private Vec3i posterBlock;
     private Vec3i posterFace;
     private BlockFace face;
-    private BlockFace right; // +x
+    private BlockFace px;
+    private BlockFace py;
     private Duration playTime = Duration.ofMinutes(5);
     private long secondsLeft;
 
@@ -38,32 +39,40 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
         super(config, SaveTag.class, SaveTag::new);
         this.displayName = booth.format("Picture Puzzle");
         this.description = text("Can you unscramble my painting?");
+        Vec3i posterX = null;
+        Vec3i posterY = null;
         for (Area area : allAreas) {
-            if ("block".equals(area.name)) {
+            if (area.name == null) continue;
+            switch (area.name) {
+            case "block":
                 posterBlock = area.min;
-            } else if ("face".equals(area.name)) {
+                break;
+            case "face":
                 posterFace = area.min;
+                break;
+            case "px":
+                posterX = area.min;
+                break;
+            case "py":
+                posterY = area.min;
+                break;
+            default:
+                break;
             }
         }
         if (posterBlock == null || posterFace == null) {
             debugLine("Poster block or face missing");
-        } else if (posterFace.x > posterBlock.x) {
-            face = BlockFace.EAST;
-            right = BlockFace.NORTH;
-        } else if (posterFace.x < posterBlock.x) {
-            face = BlockFace.WEST;
-            right = BlockFace.SOUTH;
-        } else if (posterFace.z > posterBlock.z) {
-            face = BlockFace.SOUTH;
-            right = BlockFace.EAST;
-        } else if (posterFace.z < posterBlock.z) {
-            face = BlockFace.NORTH;
-            right = BlockFace.WEST;
         } else {
-            debugLine("Poster face not aligned right");
+            face = vec2face(posterFace, posterBlock);
+        }
+        if (posterX != null && posterY != null) {
+            px = vec2face(posterX, posterBlock);
+            py = vec2face(posterY, posterBlock);
         }
         this.areaNames.add("block");
         this.areaNames.add("face");
+        this.areaNames.add("px");
+        this.areaNames.add("py");
         this.intKeys.add("time");
         this.stringKeys.add("poster");
     }
@@ -80,6 +89,24 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
             setPoster(posterName);
         } else {
             debugLine("Missing value: poster");
+        }
+    }
+
+    private static BlockFace vec2face(Vec3i head, Vec3i foot) {
+        if (head.x > foot.x) {
+            return BlockFace.EAST;
+        } else if (head.x < foot.x) {
+            return BlockFace.WEST;
+        } else if (head.z > foot.z) {
+            return BlockFace.SOUTH;
+        } else if (head.z < foot.z) {
+            return BlockFace.NORTH;
+        } else if (head.y > foot.y) {
+            return BlockFace.UP;
+        } else if (head.y < foot.z) {
+            return BlockFace.DOWN;
+        } else {
+            return BlockFace.SELF;
         }
     }
 
@@ -152,9 +179,23 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
     }
 
     protected Vec3i getPosterBlock(int x, int y) {
-        return posterBlock.add(right.getModX() * x,
-                               -y,
-                               right.getModZ() * x);
+        if (px != null && py != null) {
+            return posterBlock
+                .add(px.getModX() * x,
+                     px.getModY() * x,
+                     px.getModZ() * x)
+                .add(py.getModX() * y,
+                     py.getModY() * y,
+                     py.getModZ() * y);
+        }
+        return switch (face) {
+        case NORTH -> posterBlock.add(-x, -y, 0);
+        case SOUTH -> posterBlock.add(x, -y, 0);
+        case EAST -> posterBlock.add(0, -y, -x);
+        case WEST -> posterBlock.add(0, -y, x);
+        case UP -> posterBlock.add(x, 0, y);
+        default -> posterBlock;
+        };
     }
 
     protected void spawnAllPosters() {
