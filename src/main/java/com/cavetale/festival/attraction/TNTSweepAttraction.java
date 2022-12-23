@@ -360,7 +360,7 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
         for (int cy = ay; cy <= by; cy += 1) {
             for (int cx = ax; cx <= bx; cx += 1) {
                 int cell2 = saveTag.board.get(cx + cy * width);
-                if (cell2 <= TNT) {
+                if (cell2 == TNT || cell2 == MARKED_TNT) {
                     cell += 1;
                 }
             }
