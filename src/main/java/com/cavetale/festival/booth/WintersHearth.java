@@ -180,7 +180,7 @@ public final class WintersHearth implements Booth {
         month = YearMonth.of(YEAR, Month.DECEMBER);
         LocalDateTime now = LocalDateTime.now();
         currentDay = 0;
-        if (now.getYear() == YEAR) {
+        if (now.getYear() >= YEAR) {
             for (int i = 25; i > 0; i -= 1) {
                 LocalDateTime date = month.atDay(i).atTime(12, 0, 0);
                 if (now.isAfter(date)) {
