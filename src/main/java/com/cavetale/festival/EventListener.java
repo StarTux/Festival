@@ -208,7 +208,9 @@ public final class EventListener implements Listener {
         if (attraction.isPlaying()) {
             attraction.onPlayerHud(event);
         }
-        if (event.getPlayer().getGameMode() == GameMode.CREATIVE && !attraction.getDebugLines().isEmpty()) {
+        if (event.getPlayer().getGameMode() == GameMode.CREATIVE
+            && !attraction.getDebugLines().isEmpty()
+            && event.getPlayer().hasPermission("festival.testing")) {
             event.sidebar(PlayerHudPriority.LOW, attraction.getDebugLines());
         }
     }
