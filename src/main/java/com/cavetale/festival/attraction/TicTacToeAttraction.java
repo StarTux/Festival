@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
@@ -61,8 +62,15 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
                                text("Go!", GREEN, ITALIC),
                                times(Duration.ZERO, Duration.ofSeconds(1), Duration.ZERO)));
         startingGun(player);
-        getBoard().draw();
+        saveTag.savedBlockData.clear();
+        Board board = getBoard();
+        for (int i = 0; i < 9; i += 1) {
+            Block block = board.blocks[i].toBlock(world);
+            saveTag.savedBlockData.add(block.getBlockData().getAsString(false));
+        }
+        board.draw();
         saveTag.gameStarted = System.currentTimeMillis();
+        save();
     }
 
     @Override
@@ -245,6 +253,7 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
         protected long gameStarted;
         protected int aiTicks;
         protected int endTicks;
+        protected List<String> savedBlockData = new ArrayList<>();
     }
 
     final class Board {
@@ -362,8 +371,10 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
     }
 
     private void clearBoard() {
-        for (Vec3i vec : boardArea.enumerate()) {
-            vec.toBlock(world).setType(Material.AIR);
+        Board board = getBoard();
+        for (int i = 0; i < 9; i += 1) {
+            Block block = board.blocks[i].toBlock(world);
+            block.setBlockData(Bukkit.createBlockData(saveTag.savedBlockData.get(i)), false);
         }
     }
 
