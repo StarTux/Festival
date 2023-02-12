@@ -22,6 +22,7 @@ import org.bukkit.Material;
 import org.bukkit.Tag;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.Waterlogged;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Mob;
@@ -119,6 +120,10 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
             petBlockList.add(v.toBlock(world));
         }
         petBlockList.removeIf(block -> {
+                if (block.getLightFromBlocks() == 0 || block.isLiquid()) return true;
+                final Block below = block.getRelative(0, -1, 0);
+                if (below.isEmpty() || below.isLiquid() || below.getBlockData() instanceof Waterlogged) return true;
+                if (Tag.FENCES.isTagged(below.getType()) || Tag.WALLS.isTagged(below.getType())) return true;
                 if (block.isEmpty()) return false;
                 Material mat = block.getType();
                 if (Tag.WOOL_CARPETS.isTagged(mat)) return false;
@@ -151,8 +156,14 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         List<Block> petBlockList = makePetBlockList();
         for (UUID uuid : saveTag.pets.keySet()) {
             if (!(Bukkit.getEntity(uuid) instanceof Mob mob)) continue;
+            Block block = mob.getLocation().getBlock();
+            if (block.isLiquid() || block.getBlockData() instanceof Waterlogged w && w.isWaterlogged()) {
+                Block target = petBlockList.get(random.nextInt(petBlockList.size()));
+                mob.teleport(target.getLocation().add(0.5, 0.0, 0.5));
+                continue;
+            }
             var path = mob.getPathfinder().getCurrentPath();
-            if (path != null && path.getFinalPoint().distanceSquared(mob.getLocation()) > 2.0) {
+            if (path != null && path.getFinalPoint().distanceSquared(mob.getLocation()) > 3.0) {
                 continue;
             }
             Block target = petBlockList.get(random.nextInt(petBlockList.size()));
