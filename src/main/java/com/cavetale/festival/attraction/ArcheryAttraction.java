@@ -42,7 +42,7 @@ import static net.kyori.adventure.title.Title.Times.times;
 import static net.kyori.adventure.title.Title.title;
 
 public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTag> {
-    protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 2);
+    protected static final Duration GAME_TIME = Duration.ofSeconds(90);
     protected final Map<TargetMob, List<Vec3i>> targetMobs = new EnumMap<>(TargetMob.class);
     protected long secondsLeft;
     protected Vec3i respawnVector = Vec3i.ZERO;
