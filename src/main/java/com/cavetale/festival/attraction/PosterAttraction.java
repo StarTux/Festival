@@ -8,7 +8,6 @@ import com.cavetale.poster.PosterPlugin;
 import com.cavetale.poster.save.Poster;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -147,15 +146,47 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
     protected void rollPoster() {
         saveTag.frames = new ArrayList<>();
         if (poster == null) throw new IllegalStateException("poster=null");
-        int i = 0;
+        int nextIndex = 0;
         for (int mapId : poster.getMapIds()) {
             Frame frame = new Frame();
             frame.mapId = mapId;
-            frame.mapIndex = i++;
+            frame.mapIndex = nextIndex++;
             saveTag.frames.add(frame);
         }
         saveTag.frames.get(saveTag.frames.size() - 1).mapId = -1;
-        Collections.shuffle(saveTag.frames, random);
+        final int width = poster.getWidth();
+        final int height = poster.getHeight();
+        int x = width - 1;
+        int y = height - 1;
+        for (int i = 0; i < 100; i += 1) {
+            int chance = 1;
+            int nx = x;
+            int ny = y;
+            if (x > 0 && random.nextInt(chance++) == 0) {
+                nx = x - 1;
+                ny = y;
+            }
+            if (x < width - 1 && random.nextInt(chance++) == 0) {
+                nx = x + 1;
+                ny = y;
+            }
+            if (y > 0 && random.nextInt(chance++) == 0) {
+                nx = x;
+                ny = y - 1;
+            }
+            if (y < height - 1 && random.nextInt(chance++) == 0) {
+                nx = x;
+                ny = y + 1;
+            }
+            int emptyIndex = x + width * y;
+            int otherIndex = nx + width * ny;
+            Frame emptyFrame = saveTag.frames.get(emptyIndex);
+            Frame otherFrame = saveTag.frames.get(otherIndex);
+            saveTag.frames.set(otherIndex, emptyFrame);
+            saveTag.frames.set(emptyIndex, otherFrame);
+            x = nx;
+            y = ny;
+        }
     }
 
     protected void spawnPoster(int index) {
