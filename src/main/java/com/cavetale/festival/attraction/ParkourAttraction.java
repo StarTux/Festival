@@ -12,6 +12,7 @@ import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
+import org.bukkit.potion.PotionEffectType;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -133,6 +134,10 @@ public final class ParkourAttraction extends Attraction<ParkourAttraction.SaveTa
         if (player == null || !isInArea(player.getLocation())) return State.IDLE;
         if (player.isFlying() || player.isGliding() || player.isInsideVehicle()) {
             fail(player, "No flying");
+            return State.IDLE;
+        }
+        if (player.hasPotionEffect(PotionEffectType.LEVITATION)) {
+            fail(player, "No Levitation");
             return State.IDLE;
         }
         final long now = System.currentTimeMillis();
