@@ -182,7 +182,6 @@ public final class Festival {
             totalCompletionHandler.accept(player);
         } else {
             player.sendMessage(theme.format("You completed " + locked + "/" + total + " games."
-                                            + " Please return when you completed everything!"
                                             + " Use your Magic Map to locate more games."));
         }
     }
