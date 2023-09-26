@@ -44,7 +44,7 @@ public enum FestivalTheme {
             return ZoneType.CHRISTMAS;
         }
     },
-    Valentine {
+    VALENTINE {
         @Override public Component format(String txt) {
             return text(txt, color(0xFF69B4));
         };
