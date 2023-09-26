@@ -1,6 +1,7 @@
 package com.cavetale.festival;
 
 import com.cavetale.festival.attraction.Attraction;
+import com.cavetale.festival.booth.MidnightEstates;
 import com.cavetale.festival.booth.TestingBooth;
 import com.cavetale.festival.booth.WintersHearth;
 import com.cavetale.festival.booth.valentine.ValentineBooth;
@@ -49,6 +50,7 @@ public final class FestivalPlugin extends JavaPlugin {
 
     public void loadFestivals() {
         loadFestival(TestingBooth.FESTIVAL);
+        loadFestival(MidnightEstates.FESTIVAL);
         loadFestival(WintersHearth.FESTIVAL);
         loadFestival(ValentineBooth.FESTIVAL);
     }
