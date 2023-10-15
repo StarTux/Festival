@@ -18,6 +18,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
+import static com.cavetale.festival.booth.hades.FestivalOfHades.festivalOfHades;
 
 public final class FestivalPlugin extends JavaPlugin {
     @Getter protected static FestivalPlugin instance;
@@ -53,6 +54,7 @@ public final class FestivalPlugin extends JavaPlugin {
         loadFestival(MidnightEstates.FESTIVAL);
         loadFestival(WintersHearth.FESTIVAL);
         loadFestival(ValentineBooth.FESTIVAL);
+        loadFestival(festivalOfHades().getFestival());
     }
 
     private void loadFestival(Festival festival) {
