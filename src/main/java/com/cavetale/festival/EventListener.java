@@ -6,7 +6,6 @@ import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
-import com.cavetale.festival.attraction.FindGhostsAttraction;
 import com.cavetale.festival.attraction.MusicHeroAttraction;
 import com.cavetale.festival.session.Session;
 import com.cavetale.magicmap.event.MagicMapCursorEvent;
@@ -32,6 +31,7 @@ import org.bukkit.event.block.EntityBlockFormEvent;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -246,10 +246,11 @@ public final class EventListener implements Listener {
 
     @EventHandler
     private void onEntityPathfind(EntityPathfindEvent event) {
-        plugin.applyAttraction(event.getEntity().getLocation(), a -> {
-                if (a instanceof FindGhostsAttraction fga) {
-                    fga.onEntityPathfind(event);
-                }
-            });
+        plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityPathfind(event));
+    }
+
+    @EventHandler
+    private void onEntityTarget(EntityTargetEvent event) {
+        plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityTarget(event));
     }
 }

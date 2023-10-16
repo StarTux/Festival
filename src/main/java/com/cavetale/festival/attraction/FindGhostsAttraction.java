@@ -223,6 +223,7 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
         protected long searchStarted;
     }
 
+    @Override
     public void onEntityPathfind(EntityPathfindEvent event) {
         if (!isPlaying()) return;
         if (!(saveTag.ghostUuids.contains(event.getEntity().getUniqueId()))) return;

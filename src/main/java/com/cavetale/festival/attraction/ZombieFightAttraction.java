@@ -5,6 +5,7 @@ import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.Mytems;
+import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +31,7 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 import static net.kyori.adventure.text.Component.empty;
@@ -106,7 +108,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
         saveTag.zombies = new ArrayList<>();
         saveTag.round += 1;
         saveTag.zombiesHit = 0;
-        saveTag.zombieCount = (saveTag.round - 1) * 2 + 10;
+        saveTag.zombieCount = (saveTag.round - 1) * 2 + 5;
         for (int i = 0; i < saveTag.zombieCount; i += 1) {
             Vec3i vec = zombieBlocks.get(i);
             Location location = vec.toCenterFloorLocation(world);
@@ -114,9 +116,8 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
             Zombie zombie = location.getWorld().spawn(location, Zombie.class, s -> {
                     s.setPersistent(false);
                     s.setRemoveWhenFarAway(false);
-                    s.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.0);
+                    s.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.15);
                     s.setGlowing(true);
-                    Bukkit.getMobGoals().removeAllGoals(s);
                 });
             if (zombie != null) {
                 saveTag.zombies.add(zombie.getUniqueId());
@@ -180,23 +181,10 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
             for (UUID uuid : saveTag.zombies) {
                 Entity entity = Bukkit.getEntity(uuid);
                 if (!(entity instanceof Zombie zombie)) continue;
-                if (player.getLocation().getY() >= zombie.getLocation().getY() + 1.5 && zombie.hasLineOfSight(player)) {
-                    Vector direction = player.getEyeLocation().toVector()
-                        .subtract(zombie.getEyeLocation().toVector())
-                        .multiply(1.5);
-                    zombie.launchProjectile(Egg.class, direction);
-                } else {
-                    final int total = 4;
-                    for (int i = 0; i < total; i += 1) {
-                        double frac = (double) i / (double) total;
-                        double pi = frac * 2.0 * Math.PI + random.nextDouble() * Math.PI;
-                        final double str = 1.5;
-                        Vector direction = new Vector(Math.cos(pi) * str,
-                                                      0.0,
-                                                      Math.sin(pi) * str);
-                        zombie.launchProjectile(Egg.class, direction);
-                    }
-                }
+                Vector direction = player.getEyeLocation().toVector()
+                    .subtract(zombie.getEyeLocation().toVector())
+                    .multiply(1.5);
+                zombie.launchProjectile(Egg.class, direction);
             }
             player.playSound(player.getLocation(), Sound.ENTITY_SNOW_GOLEM_SHOOT,
                              SoundCategory.MASTER, 1.0f, 1.5f);
@@ -323,5 +311,21 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
         if (event.getEntity() instanceof Zombie zombie) {
             event.setCancelled(true);
         }
+    }
+
+    @Override
+    public void onEntityTarget(EntityTargetEvent event) {
+        if (event.getTarget() == null) return;
+        if (event.getTarget().equals(getCurrentPlayer())) return;
+        event.setCancelled(true);
+    }
+
+    @Override
+    public void onEntityPathfind(EntityPathfindEvent event) {
+        if (!isPlaying()) return;
+        if (saveTag.zombies == null) return;
+        if (!saveTag.zombies.contains(event.getEntity().getUniqueId())) return;
+        if (mainArea.contains(event.getLoc())) return;
+        event.setCancelled(true);
     }
 }

@@ -22,6 +22,7 @@ import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.MytemsCategory;
 import com.cavetale.resident.PluginSpawn;
 import com.cavetale.resident.save.Loc;
+import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
 import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -53,6 +54,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityCombustEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
@@ -337,6 +339,10 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     public void onEntityToggleGlide(EntityToggleGlideEvent event) { }
 
     public void onPlayerBlockAbility(PlayerBlockAbilityQuery event) { }
+
+    public void onEntityPathfind(EntityPathfindEvent event) { }
+
+    public void onEntityTarget(EntityTargetEvent event) { }
 
     public final void onPlayerQuit(PlayerQuitEvent event) {
         if (isPlaying() && event.getPlayer().equals(getCurrentPlayer())) {
