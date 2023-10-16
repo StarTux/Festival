@@ -6,6 +6,7 @@ import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaEffects;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
+import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,7 +50,7 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
         if (ghostAreas.isEmpty()) {
             debugLine("No ghost areas");
         } else if (ghostAreas.size() < 7) {
-            debugLine("Fewer than 7 ghost areas");
+            debugLine("Only " + ghostAreas.size() + "/7 ghost areas");
         }
     }
 
@@ -220,6 +221,16 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
         protected List<UUID> ghostUuids = new ArrayList<>();
         protected int totalGhosts;
         protected long searchStarted;
+    }
+
+    public void onEntityPathfind(EntityPathfindEvent event) {
+        if (!isPlaying()) return;
+        if (!(saveTag.ghostUuids.contains(event.getEntity().getUniqueId()))) return;
+        Location to = event.getLoc();
+        for (Cuboid cuboid : ghostAreas) {
+            if (cuboid.contains(to)) return;
+        }
+        event.setCancelled(true);
     }
 
     @Override

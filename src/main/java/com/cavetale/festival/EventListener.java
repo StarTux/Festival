@@ -6,6 +6,7 @@ import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
+import com.cavetale.festival.attraction.FindGhostsAttraction;
 import com.cavetale.festival.attraction.MusicHeroAttraction;
 import com.cavetale.festival.session.Session;
 import com.cavetale.magicmap.event.MagicMapCursorEvent;
@@ -14,6 +15,7 @@ import com.cavetale.mytems.event.music.PlayerBeatEvent;
 import com.cavetale.mytems.event.music.PlayerCloseMusicalInstrumentEvent;
 import com.cavetale.mytems.event.music.PlayerMelodyCompleteEvent;
 import com.cavetale.mytems.event.music.PlayerOpenMusicalInstrumentEvent;
+import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
 import com.destroystokyo.paper.event.entity.ThrownEggHatchEvent;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
@@ -240,5 +242,14 @@ public final class EventListener implements Listener {
     @EventHandler
     private void onPlayerBlockAbility(PlayerBlockAbilityQuery event) {
         plugin.applyAttraction(event.getBlock(), a -> a.onPlayerBlockAbility(event));
+    }
+
+    @EventHandler
+    private void onEntityPathfind(EntityPathfindEvent event) {
+        plugin.applyAttraction(event.getEntity().getLocation(), a -> {
+                if (a instanceof FindGhostsAttraction fga) {
+                    fga.onEntityPathfind(event);
+                }
+            });
     }
 }
