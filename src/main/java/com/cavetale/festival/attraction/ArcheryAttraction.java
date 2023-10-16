@@ -124,6 +124,8 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 debugLine(targetMob.key + " bad size: " + ls.size() + "/2");
             }
         }
+        if (forbiddenZones.isEmpty()) debugLine("no forbidden areas");
+        if (Vec3i.ZERO.equals(respawnVector)) debugLine("no respawn area");
     }
 
     @Override
@@ -321,6 +323,11 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             Location mobSpawnLocation = from.toCenterFloorLocation(world);
             Mob mob = targetMob.spawn(mobSpawnLocation);
             if (mob != null) {
+                final var mobDirection = mobSpawnLocation.toVector().subtract(player.getLocation().toVector()).normalize();
+                final var sound = mob instanceof Bee
+                    ? Sound.ENTITY_BEE_HURT
+                    : mob.getAmbientSound();
+                player.playSound(player.getLocation().add(mobDirection.multiply(6)), sound, SoundCategory.MASTER, 1.0f, 1.0f);
                 data.uuids.add(mob.getUniqueId());
                 Bukkit.getMobGoals().removeAllGoals(mob);
                 if (random.nextInt(5) == 0) {
