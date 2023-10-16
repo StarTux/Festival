@@ -38,7 +38,7 @@ public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttract
         this.doesRequireInstrument = true;
         this.displayName = booth.format("Play the Melody");
         this.description = text("I'll give you a melody and you're gonna repeat it. It gets harder every round.");
-        Random random2 = new Random(npcVector.hashCode());
+        Random random2 = new Random(npcVector != null ? npcVector.hashCode() : mainArea.hashCode());
         octave = random2.nextInt(2);
         List<Instrument> instruments = new ArrayList<>();
         for (Instrument it : Instrument.values()) instruments.add(it);
