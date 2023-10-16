@@ -2,13 +2,8 @@ package com.cavetale.festival.booth.hades;
 
 import com.cavetale.festival.Festival;
 import com.cavetale.festival.FestivalTheme;
-import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.booth.Booth;
-import com.cavetale.mytems.Mytems;
-import java.util.List;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 /**
