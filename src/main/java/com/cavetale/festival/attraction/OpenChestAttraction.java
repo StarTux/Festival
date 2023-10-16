@@ -5,15 +5,21 @@ import com.cavetale.core.font.Unicode;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.session.Session;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
 import java.util.Set;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
+import static java.util.Comparator.comparing;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -89,13 +95,14 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
         Location location = block.getLocation().add(0.5, 0.5, 0.5);
         confetti(player, location);
         progress(player);
-        boolean bingo = random.nextInt(3) == 0;
-        giveReward(player, bingo);
-        Session session = festival.sessionOf(player);
+        final boolean bingo = saveTag.treasureChest.equals(Vec3i.of(block));
+        final Session session = festival.sessionOf(player);
         if (bingo) {
             perfect(player);
+            giveReward(player, bingo);
             session.setCooldown(this, completionCooldown);
         } else {
+            fail(player);
             session.setCooldown(this, (session.isUniqueLocked(this)
                                        ? completionCooldown
                                        : Duration.ofSeconds(10)));
@@ -112,18 +119,44 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
     }
 
     private void placeChests(Player player) {
-        Vec3i playerVector = Vec3i.of(player.getLocation());
-        for (Vec3i vec : chestBlockSet) {
+        final Vec3i playerVector = Vec3i.of(player.getLocation());
+        final List<Vec3i> chestBlockList = new ArrayList<>(chestBlockSet);
+        chestBlockList.sort(comparing(Vec3i::getY)
+                            .thenComparing(Vec3i::getZ)
+                            .thenComparing(Vec3i::getX));
+        saveTag.blockList = new ArrayList<>();
+        saveTag.blockDataList = new ArrayList<>();
+        for (Vec3i vec : chestBlockList) {
+            final Block block = vec.toBlock(world);
+            saveTag.blockList.add(vec);
+            saveTag.blockDataList.add(block.getBlockData().getAsString(false));
             Chest blockData = (Chest) Material.CHEST.createBlockData();
             blockData.setFacing(horizontalBlockFace(npcVector.subtract(vec)));
-            vec.toBlock(world).setBlockData(blockData);
+            block.setBlockData(blockData);
         }
+        Session session = festival.sessionOf(player);
+        final int completionCount = session.getCompletionCount(this);
+        int hash = player.getUniqueId().hashCode();
+        hash = hash * 31 + completionCount;
+        hash = hash * 31 + (npcVector != null ? npcVector.hashCode() : mainArea.hashCode());
+        hash *= 31;
+        Random random2 = new Random((long) hash);
+        final int treasureIndex = random2.nextInt(chestBlockList.size());
+        saveTag.treasureChest = chestBlockList.get(treasureIndex);
     }
 
     private void clearChests() {
-        for (Vec3i vec : chestBlockSet) {
-            vec.toBlock(world).setType(Material.AIR);
+        if (saveTag.blockList == null) return;
+        if (saveTag.blockDataList == null) return;
+        for (int i = 0; i < saveTag.blockList.size(); i += 1) {
+            Vec3i vec = saveTag.blockList.get(i);
+            String string = saveTag.blockDataList.get(i);
+            BlockData blockData = Bukkit.createBlockData(string);
+            Block block = vec.toBlock(world);
+            vec.toBlock(world).setBlockData(blockData);
         }
+        saveTag.blockList = null;
+        saveTag.blockDataList = null;
     }
 
     protected State tickOpen() {
@@ -182,5 +215,8 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
     protected static final class SaveTag extends Attraction.SaveTag {
         protected State state = State.IDLE;
         protected long openStarted;
+        protected List<Vec3i> blockList;
+        protected List<String> blockDataList;
+        protected Vec3i treasureChest = Vec3i.ZERO;
     }
 }

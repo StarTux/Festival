@@ -59,6 +59,9 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             .description("Complete player session")
             .completers(CommandArgCompleter.PLAYER_CACHE)
             .playerCaller(this::sessionComplete);
+        sessionNode.addChild("clearcooldowns").arguments("<player>")
+            .description("Clear player cooldowns")
+            .playerCaller(this::sessionClearCooldowns);
         CommandNode attractionNode = rootNode.addChild("attraction")
             .description("Attraction subcommands");
         attractionNode.addChild("create").arguments("<type> <name>")
@@ -180,6 +183,18 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         }
         session.save();
         player.sendMessage(text("Session completed: " + target.getName(), YELLOW));
+        return true;
+    }
+
+    private boolean sessionClearCooldowns(Player player, String[] args) {
+        if (args.length != 1) return false;
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("No festival here!");
+        PlayerCache target = PlayerCache.require(args[0]);
+        Session session = festival.sessions.of(target);
+        session.getTag().getCooldowns().clear();
+        session.save();
+        player.sendMessage(text("Cooldowns cleared: " + target.getName(), YELLOW));
         return true;
     }
 

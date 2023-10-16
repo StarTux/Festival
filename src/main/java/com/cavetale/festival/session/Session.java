@@ -10,6 +10,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import lombok.Data;
+import lombok.Getter;
 
 /**
  * Player save file per festival.
@@ -19,7 +21,7 @@ public final class Session {
     protected final UUID uuid;
     protected final String name;
     protected final File saveFile;
-    protected Tag tag;
+    @Getter protected Tag tag;
 
     protected Session(final Festival festival, final UUID uuid, final String name) {
         this.festival = festival;
@@ -64,6 +66,15 @@ public final class Session {
         tag.uniquesGot.add(attraction.getUniqueKey());
     }
 
+    public int getCompletionCount(Attraction attraction) {
+        return tag.completionCounts.getOrDefault(attraction.getUniqueKey(), 0);
+    }
+
+    public void addCompletion(Attraction attraction) {
+        final int value = getCompletionCount(attraction);
+        tag.completionCounts.put(attraction.getUniqueKey(), value + 1);
+    }
+
     public boolean isTotallyCompleted() {
         return tag.totallyCompleted;
     }
@@ -105,10 +116,12 @@ public final class Session {
         tag = new Tag();
     }
 
-    static final class Tag {
+    @Data
+    public static final class Tag {
         protected boolean totallyCompleted;
         protected final Map<String, Long> cooldowns = new HashMap<>();
         protected final Set<String> uniquesGot = new HashSet<>();
+        protected final Map<String, Integer> completionCounts = new HashMap<>();
         protected final Map<String, Integer> prizesWaiting = new HashMap<>(); // 1 = regular, 2 = unique
         protected final Set<String> collection = new HashSet<>(); // Festival specific
         protected int progress; // Festival specific

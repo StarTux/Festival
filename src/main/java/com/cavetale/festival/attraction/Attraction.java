@@ -409,6 +409,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
      */
     protected final void giveReward(Player player, boolean appliesForFirstCompletion) {
         Session session = festival.sessionOf(player);
+        session.addCompletion(this);
         if (appliesForFirstCompletion && !session.isUniqueLocked(this)) {
             giveFirstCompletionReward(player);
         } else {
