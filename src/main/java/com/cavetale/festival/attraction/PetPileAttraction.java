@@ -129,6 +129,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
                 if (Tag.WOOL_CARPETS.isTagged(mat)) return false;
                 if (Tag.CROPS.isTagged(mat)) return false;
                 switch (mat) {
+                case LIGHT:
                 case COBWEB:
                 case GRASS:
                 case PUMPKIN_STEM:
