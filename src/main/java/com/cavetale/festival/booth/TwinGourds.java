@@ -15,7 +15,7 @@ import org.bukkit.inventory.ItemStack;
  */
 public final class TwinGourds implements Booth {
     public static final TwinGourds INSTANCE = new TwinGourds();
-    public static final Festival FESTIVAL = new Festival("twin_gourds",
+    public static final Festival FESTIVAL = new Festival("halloweenbuildevent2022",
                                                          "Halloween",
                                                          FestivalTheme.HALLOWEEN,
                                                          s -> INSTANCE,
