@@ -45,6 +45,12 @@ public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttract
         instruments.remove(Instrument.BASS_DRUM);
         instruments.remove(Instrument.SNARE_DRUM);
         instruments.remove(Instrument.STICKS);
+        instruments.remove(Instrument.CUSTOM_HEAD);
+        instruments.remove(Instrument.CREEPER);
+        instruments.remove(Instrument.PIGLIN);
+        instruments.remove(Instrument.SKELETON);
+        instruments.remove(Instrument.WITHER_SKELETON);
+        instruments.remove(Instrument.ZOMBIE);
         instrument = instruments.get(random2.nextInt(instruments.size()));
         makeMelody(random2);
     }
