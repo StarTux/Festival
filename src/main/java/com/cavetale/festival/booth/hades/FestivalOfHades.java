@@ -39,5 +39,6 @@ public final class FestivalOfHades {
     }
 
     public void onComplete(Player player) {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "kite member HalloweenComplete2023 " + player.getName());
     }
 }
