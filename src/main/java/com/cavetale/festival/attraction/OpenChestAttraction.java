@@ -103,9 +103,6 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
             session.setCooldown(this, completionCooldown);
         } else {
             fail(player);
-            session.setCooldown(this, (session.isUniqueLocked(this)
-                                       ? completionCooldown
-                                       : Duration.ofSeconds(10)));
         }
         changeState(State.IDLE);
     }
