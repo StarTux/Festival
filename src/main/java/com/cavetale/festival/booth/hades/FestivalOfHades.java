@@ -3,6 +3,7 @@ package com.cavetale.festival.booth.hades;
 import com.cavetale.festival.Festival;
 import com.cavetale.festival.FestivalTheme;
 import com.cavetale.festival.booth.Booth;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
