@@ -38,6 +38,7 @@ import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
@@ -252,5 +253,13 @@ public final class EventListener implements Listener {
     @EventHandler
     private void onEntityTarget(EntityTargetEvent event) {
         plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityTarget(event));
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onPlayerRespawn(PlayerRespawnEvent event) {
+        Festival festival = plugin.getFestival(event.getPlayer().getWorld());
+        if (festival != null) {
+            event.setRespawnLocation(event.getPlayer().getWorld().getSpawnLocation());
+        }
     }
 }
