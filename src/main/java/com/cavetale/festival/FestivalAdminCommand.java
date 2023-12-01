@@ -49,6 +49,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             .description("Count attractions")
             .completers(CommandArgCompleter.supplyList(() -> List.copyOf(plugin.festivalMap.keySet())))
             .senderCaller(this::count);
+        rootNode.addChild("countcompletions").arguments("<world>")
+            .description("Count total completions")
+            .completers(CommandArgCompleter.supplyList(() -> List.copyOf(plugin.festivalMap.keySet())))
+            .senderCaller(this::countCompletions);
         CommandNode sessionNode = rootNode.addChild("session")
             .description("Session subcommands");
         sessionNode.addChild("reset").arguments("<player>")
@@ -156,6 +160,24 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             sender.sendMessage(counts.get(type) + " " + type);
         }
         sender.sendMessage(festival.getAttractionsMap().size() + " Total");
+        return true;
+    }
+
+    protected boolean countCompletions(CommandSender sender, String[] args) {
+        if (args.length != 1) return false;
+        Festival festival = plugin.festivalMap.get(args[0]);
+        if (festival == null) throw new CommandWarn("World not found: " + args[0]);
+        final int total = festival.getAttractionsMap().size();
+        List<Session> completedSessions = new ArrayList<>();
+        for (Session session : Session.loadAll(festival)) {
+            if (session.isTotallyCompleted() || session.getTag().getUniquesGot().size() >= total) {
+                completedSessions.add(session);
+            }
+        }
+        for (Session session : completedSessions) {
+            sender.sendMessage(text(session.getUuid() + " " + session.getName()));
+        }
+        sender.sendMessage(text("Total " + completedSessions.size() + " total completions", YELLOW));
         return true;
     }
 

@@ -1,12 +1,15 @@
 package com.cavetale.festival.session;
 
+import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.core.util.Json;
 import com.cavetale.festival.Festival;
 import com.cavetale.festival.attraction.Attraction;
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -16,12 +19,13 @@ import lombok.Getter;
 /**
  * Player save file per festival.
  */
+@Getter
 public final class Session {
     protected final Festival festival;
     protected final UUID uuid;
     protected final String name;
     protected final File saveFile;
-    @Getter protected Tag tag;
+    protected Tag tag;
 
     protected Session(final Festival festival, final UUID uuid, final String name) {
         this.festival = festival;
@@ -36,6 +40,20 @@ public final class Session {
 
     public void save() {
         Json.save(saveFile, tag, true);
+    }
+
+    public static List<Session> loadAll(Festival festival) {
+        List<Session> result = new ArrayList<>();
+        for (File file : festival.getPlayersFolder().listFiles()) {
+            String name = file.getName();
+            if (!file.getName().endsWith(".json")) continue;
+            name = name.substring(0, name.length() - 5);
+            UUID uuid = UUID.fromString(name);
+            Session session = new Session(festival, uuid, PlayerCache.nameForUuid(uuid));
+            session.load();
+            result.add(session);
+        }
+        return result;
     }
 
     public Duration getCooldown(Attraction attraction) {
