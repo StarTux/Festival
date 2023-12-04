@@ -19,7 +19,8 @@ public final class ValentineBooth implements Booth {
                                                          ValentineBooth::onComplete,
                                                          null, // load
                                                          null, // unload
-                                                         null); // gui
+                                                         null) // gui
+        .festivalServer();
 
     private static Booth makeBooth(String name) {
         return new ValentineBooth();

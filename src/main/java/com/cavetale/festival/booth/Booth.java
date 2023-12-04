@@ -9,6 +9,7 @@ import com.cavetale.mytems.item.music.Melody;
 import com.cavetale.resident.ZoneType;
 import java.util.List;
 import net.kyori.adventure.text.Component;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -62,4 +63,8 @@ public interface Booth {
     default Component getMapCursorCaption() {
         return null;
     }
+
+    default void onFirstCompletion(Attraction attraction, Player player) { }
+
+    default void onRegularCompletion(Attraction attraction, Player player) { }
 }

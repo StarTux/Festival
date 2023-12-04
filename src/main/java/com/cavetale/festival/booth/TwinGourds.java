@@ -20,7 +20,7 @@ public final class TwinGourds implements Booth {
                                                          FestivalTheme.HALLOWEEN,
                                                          s -> INSTANCE,
                                                          TwinGourds::onTotalCompletion,
-                                                         null, null, null);
+                                                         null, null, null).festivalServer();
 
     @Override
     public AttractionType getType() {

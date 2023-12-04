@@ -372,6 +372,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone());
+        booth.onFirstCompletion(this, player);
     }
 
     /**
@@ -387,6 +388,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone());
+        booth.onRegularCompletion(this, player);
     }
 
     /**

@@ -20,6 +20,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
 import static com.cavetale.festival.booth.hades.FestivalOfHades.festivalOfHades;
+import static com.cavetale.festival.booth.spawn.SpawnFestival.spawnFestival;
 
 public final class FestivalPlugin extends JavaPlugin {
     @Getter protected static FestivalPlugin instance;
@@ -57,9 +58,11 @@ public final class FestivalPlugin extends JavaPlugin {
         loadFestival(ValentineBooth.FESTIVAL);
         loadFestival(TwinGourds.FESTIVAL);
         loadFestival(festivalOfHades().getFestival());
+        loadFestival(spawnFestival().getFestival());
     }
 
     private void loadFestival(Festival festival) {
+        if (!festival.isOnThisServer()) return;
         festivalMap.put(festival.getWorldName(), festival);
         festival.load();
     }

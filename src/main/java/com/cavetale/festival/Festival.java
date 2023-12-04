@@ -2,6 +2,7 @@ package com.cavetale.festival;
 
 import com.cavetale.area.struct.Area;
 import com.cavetale.area.struct.AreasFile;
+import com.cavetale.core.connect.NetworkServer;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
@@ -16,9 +17,11 @@ import com.cavetale.resident.save.Loc;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -51,6 +54,7 @@ public final class Festival {
     protected PluginSpawn totalCompletionVillager;
     protected File saveFolder;
     protected File playersFolder;
+    protected final Set<NetworkServer> servers = EnumSet.noneOf(NetworkServer.class);
 
     public void clear() {
         for (Attraction<?> attraction : attractionsMap.values()) {
@@ -218,5 +222,26 @@ public final class Festival {
 
     public void openInventory(Player player) {
         if (guiHandler != null) guiHandler.accept(player);
+    }
+
+    public boolean isOnThisServer() {
+        return servers.isEmpty() || servers.contains(NetworkServer.current());
+    }
+
+    public Festival server(NetworkServer server) {
+        servers.add(server);
+        return this;
+    }
+
+    public Festival festivalServer() {
+        return server(NetworkServer.FESTIVAL);
+    }
+
+    public Festival creativeServer() {
+        return server(NetworkServer.CREATIVE);
+    }
+
+    public Festival hubServer() {
+        return server(NetworkServer.HUB);
     }
 }

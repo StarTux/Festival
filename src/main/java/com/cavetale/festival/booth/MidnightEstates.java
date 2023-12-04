@@ -298,7 +298,7 @@ public enum MidnightEstates implements Booth {
                                                          FestivalTheme.HALLOWEEN,
                                                          MidnightEstates::forName,
                                                          MidnightEstates::onTotalCompletion,
-                                                         null, null, null);
+                                                         null, null, null).festivalServer();
 
     private final String name; // Corresponds with area.name
     private final AttractionType type;

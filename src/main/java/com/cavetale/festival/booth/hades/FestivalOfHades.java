@@ -30,7 +30,8 @@ public final class FestivalOfHades {
                                     this::onComplete,
                                     null, // load
                                     null, // unload
-                                    null); // gui
+                                    null) // gui
+                .festivalServer();
         }
         return festival;
     }
