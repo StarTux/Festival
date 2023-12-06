@@ -38,7 +38,7 @@ public final class SnowballFightAttraction extends Attraction<SnowballFightAttra
     protected final Duration playTime = Duration.ofSeconds(60);
     protected final Duration warmupTime = Duration.ofSeconds(5);
     protected final List<Vec3i> snowmanBlocks = new ArrayList<>();
-    @Setter private int totalRounds = 5;
+    @Setter private int totalRounds = 3;
     protected int secondsLeft;
 
     protected SnowballFightAttraction(final AttractionConfiguration config) {
@@ -103,7 +103,7 @@ public final class SnowballFightAttraction extends Attraction<SnowballFightAttra
         saveTag.snowmen = new ArrayList<>();
         saveTag.round += 1;
         saveTag.snowmenHit = 0;
-        saveTag.snowmanCount = (saveTag.round - 1) * 2 + 10;
+        saveTag.snowmanCount = (saveTag.round - 1) * 2 + 6;
         for (int i = 0; i < saveTag.snowmanCount; i += 1) {
             Vec3i vec = snowmanBlocks.get(i);
             Location location = vec.toCenterFloorLocation(world);
