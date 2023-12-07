@@ -77,6 +77,9 @@ public final class SpawnBooth implements Booth {
         case "SnowballFight":
             Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "adventadmin unlock " + player.getName() + " 4");
             break;
+        case "MerryChristmas":
+            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "adventadmin unlock " + player.getName() + " 8");
+            break;
         default: break;
         }
     }
