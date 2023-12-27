@@ -131,7 +131,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
                 switch (mat) {
                 case LIGHT:
                 case COBWEB:
-                case GRASS:
+                case SHORT_GRASS:
                 case PUMPKIN_STEM:
                 case MELON_STEM:
                 case CARROTS:

@@ -93,7 +93,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
                 switch (mat) {
                 case LIGHT:
                 case COBWEB:
-                case GRASS:
+                case SHORT_GRASS:
                 case PUMPKIN_STEM:
                 case MELON_STEM:
                 case CARROTS:
