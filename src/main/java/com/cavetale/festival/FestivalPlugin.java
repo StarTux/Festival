@@ -63,8 +63,13 @@ public final class FestivalPlugin extends JavaPlugin {
 
     private void loadFestival(Festival festival) {
         if (!festival.isOnThisServer()) return;
+        try {
+            festival.load();
+        } catch (IllegalStateException ise) {
+            getLogger().warning(festival.getWorldName() + ": " + ise.getMessage());
+            return;
+        }
         festivalMap.put(festival.getWorldName(), festival);
-        festival.load();
     }
 
     public void clearFestivals() {
