@@ -9,7 +9,6 @@ import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.MusicHeroAttraction;
 import com.cavetale.festival.session.Session;
 import com.cavetale.magicmap.event.MagicMapCursorEvent;
-import com.cavetale.magicmap.util.Cursors;
 import com.cavetale.mytems.event.music.PlayerBeatEvent;
 import com.cavetale.mytems.event.music.PlayerCloseMusicalInstrumentEvent;
 import com.cavetale.mytems.event.music.PlayerMelodyCompleteEvent;
@@ -174,11 +173,10 @@ public final class EventListener implements Listener {
             if (attraction.isDisabled()) continue;
             Vec3i vec = attraction.getNpcVector();
             if (vec == null) continue;
-            if (vec.x < event.getMinX() || vec.x > event.getMaxX()) continue;
-            if (vec.z < event.getMinZ() || vec.z > event.getMaxZ()) continue;
-            boolean completed = session.isUniqueLocked(attraction);
-            boolean pickedUp = session.getPrizeWaiting(attraction) != 2;
-            MapCursor.Type cursorType;
+            if (!event.contains(vec.x, vec.z)) continue;
+            final boolean completed = session.isUniqueLocked(attraction);
+            final boolean pickedUp = session.getPrizeWaiting(attraction) != 2;
+            final MapCursor.Type cursorType;
             if (completed && pickedUp) {
                 cursorType = MapCursor.Type.MANSION;
             } else if (completed && !pickedUp) {
@@ -186,13 +184,8 @@ public final class EventListener implements Listener {
             } else {
                 cursorType = attraction.getType().getMapCursorIcon();
             }
-            MapCursor mapCursor = Cursors.make(cursorType,
-                                               vec.x - event.getMinX(),
-                                               vec.z - event.getMinZ(),
-                                               8);
-            Component caption = attraction.getBooth().getMapCursorCaption();
-            if (caption != null) mapCursor.caption(caption);
-            event.getCursors().addCursor(mapCursor);
+            final Component caption = attraction.getBooth().getMapCursorCaption();
+            event.addCursor(cursorType, vec.toLocation(event.getPlayer().getWorld()), caption);
         }
     }
 
