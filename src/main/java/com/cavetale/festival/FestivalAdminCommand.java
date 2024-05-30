@@ -331,7 +331,7 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         plugin.clearFestivals();
         plugin.loadFestivals();
         player.sendMessage(text("Area added: " + area, GREEN));
-        area.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.REDSTONE, loc,
+        area.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.DUST, loc,
                                                                       1, 0.0, 0.0, 0.0, 0.0,
                                                                       new Particle.DustOptions(Color.GREEN, 1.0f)));
         return true;
@@ -366,7 +366,7 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         plugin.clearFestivals();
         plugin.loadFestivals();
         player.sendMessage(text("Area removed: " + removedArea, YELLOW));
-        removedArea.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.REDSTONE,
+        removedArea.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.DUST,
                                                                              loc, 1, 0.0, 0.0, 0.0, 0.0,
                                                                              new Particle.DustOptions(Color.RED, 1.0f)));
         return true;

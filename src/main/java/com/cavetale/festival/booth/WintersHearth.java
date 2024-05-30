@@ -13,7 +13,6 @@ import com.cavetale.festival.gui.Gui;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.item.music.Melody;
-import com.cavetale.mytems.util.Items;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -37,6 +36,7 @@ import org.bukkit.inventory.ItemStack;
 import static com.cavetale.core.font.Unicode.superscript;
 import static com.cavetale.core.util.CamelCase.toCamelCase;
 import static com.cavetale.festival.FestivalPlugin.plugin;
+import static com.cavetale.mytems.util.Items.tooltip;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -379,13 +379,13 @@ public final class WintersHearth implements Booth {
             }
             TextColor dayColor = i % 2 == 0 ? color(0xE40010) : color(0x00B32C);
             builder.highlightSlot(guiIndex, color(0x8080FF));
-            item = Items.text(item, List.of(Component.text(toCamelCase(" ", dayOfWeek)
-                                                           + " " + dayOfChristmas, dayColor),
-                                            textOfChildren(text("Progress ", GRAY),
-                                                           (dailyAttractions > 0
-                                                            ? text(dailyFinishedAttraction + "/" + dailyAttractions,
-                                                                   canOpen ? GREEN : RED)
-                                                            : text("Coming Soon", RED)))));
+            item = tooltip(item, List.of(Component.text(toCamelCase(" ", dayOfWeek)
+                                                        + " " + dayOfChristmas, dayColor),
+                                         textOfChildren(text("Progress ", GRAY),
+                                                        (dailyAttractions > 0
+                                                         ? text(dailyFinishedAttraction + "/" + dailyAttractions,
+                                                                canOpen ? GREEN : RED)
+                                                         : text("Coming Soon", RED)))));
             gui.setItem(guiIndex, item, canOpen
                         ? (click -> {
                                 if (!click.isLeftClick()) return;

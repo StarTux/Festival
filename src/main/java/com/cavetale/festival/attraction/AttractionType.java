@@ -58,7 +58,7 @@ public enum AttractionType {
 
     public MapCursor.Type getMapCursorIcon() {
         return switch (this) {
-        case TRADE_CHAIN -> MapCursor.Type.WHITE_CROSS;
+        case TRADE_CHAIN -> MapCursor.Type.TARGET_X;
         default -> MapCursor.Type.RED_X;
         };
     }

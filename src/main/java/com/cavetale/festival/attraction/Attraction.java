@@ -647,16 +647,18 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void confetti(Player player, Location location) {
-        player.spawnParticle(Particle.SPELL_MOB, location, 16, 0.25, 0.25, 0.25, 1.0);
+        player.spawnParticle(Particle.ENTITY_EFFECT, location, 16, 0.25, 0.25, 0.25, 1.0,
+                             Color.fromRGB(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
     }
 
     protected final void confetti(Location location) {
-        location.getWorld().spawnParticle(Particle.SPELL_MOB, location, 16, 0.25, 0.25, 0.25, 1.0);
+        location.getWorld().spawnParticle(Particle.ENTITY_EFFECT, location, 16, 0.25, 0.25, 0.25, 1.0,
+                                          Color.fromRGB(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
     }
 
     protected final void highlight(Player player, Location location) {
         Particle.DustOptions dustOptions = new Particle.DustOptions(Color.WHITE, 4.0f);
-        player.spawnParticle(Particle.REDSTONE, location, 4, 1.0, 1.0, 1.0, 1.0, dustOptions);
+        player.spawnParticle(Particle.DUST, location, 4, 1.0, 1.0, 1.0, 1.0, dustOptions);
     }
 
     public final List<Player> getPlayersIn(Cuboid area) {
