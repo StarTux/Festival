@@ -4,8 +4,8 @@ import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.struct.Vec3i;
-import com.cavetale.mytems.util.Text;
 import com.destroystokyo.paper.entity.ai.GoalType;
+import io.papermc.paper.registry.RegistryKey;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -30,6 +31,8 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import static com.cavetale.core.util.CamelCase.snakeToCamelCase;
+import static io.papermc.paper.registry.RegistryAccess.registryAccess;
 import static net.kyori.adventure.text.Component.text;
 
 public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTag> {
@@ -314,7 +317,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         private int fakeIndex;
 
         @Override public void roll() {
-            List<Cat.Type> types = new ArrayList<>(List.of(Cat.Type.values()));
+            final List<Cat.Type> types = registryAccess().getRegistry(RegistryKey.CAT_VARIANT).stream().collect(Collectors.toCollection(ArrayList::new));
             Collections.shuffle(types, random);
             realType = types.remove(types.size() - 1);
             fakeTypes = List.copyOf(types);
@@ -345,10 +348,12 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         }
 
         @Override public String realName() {
-            switch (realType) {
-            case BLACK: return "Tuxedo Cat";
-            case ALL_BLACK: return "Black Cat";
-            default: return Text.toCamelCase(realType) + " Cat";
+            if (realType == Cat.Type.BLACK) {
+                return "Tuxedo Cat";
+            } else if (realType == Cat.Type.ALL_BLACK) {
+                return "Black Cat";
+            } else {
+                return snakeToCamelCase(" ", realType.getKey().getKey()) + " Cat";
             }
         }
     }

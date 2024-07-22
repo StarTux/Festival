@@ -166,7 +166,7 @@ public final class WintersHearth implements Booth {
                 itemStack = mytems.createIcon(List.of(THEME.format(itemName)));
                 itemStack.editMeta(meta -> {
                         meta.addItemFlags(ItemFlag.values());
-                        for (Enchantment ench : Enchantment.values()) {
+                        for (Enchantment ench : meta.getEnchants().keySet()) {
                             meta.removeEnchant(ench);
                         }
                     });

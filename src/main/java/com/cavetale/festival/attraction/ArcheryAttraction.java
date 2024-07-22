@@ -8,6 +8,7 @@ import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.util.Entities;
+import io.papermc.paper.registry.RegistryKey;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.EnumMap;
@@ -34,6 +35,7 @@ import org.bukkit.entity.Rabbit;
 import org.bukkit.entity.Sheep;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
+import static io.papermc.paper.registry.RegistryAccess.registryAccess;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
@@ -294,8 +296,8 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             }
             if (!entity.getPassengers().isEmpty() && entity.getPassengers().get(0) instanceof Cat cat) {
                 if (doAnimate) {
-                    List<Cat.Type> types = List.of(Cat.Type.values());
-                    int catTypeIndex = types.indexOf(cat.getCatType());
+                    final List<Cat.Type> types = registryAccess().getRegistry(RegistryKey.CAT_VARIANT).stream().toList();
+                    final int catTypeIndex = types.indexOf(cat.getCatType());
                     cat.setCatType(types.get((catTypeIndex + 1) % types.size()));
                 }
                 cat.setRotation(catYaw, 0.0f);
