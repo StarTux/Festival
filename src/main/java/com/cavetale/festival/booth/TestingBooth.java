@@ -16,7 +16,7 @@ public final class TestingBooth implements Booth {
                                                          FestivalTheme.TESTING,
                                                          s -> INSTANCE,
                                                          TestingBooth::onComplete,
-                                                         null, null, null).festivalServer();
+                                                         null, null, null).betaServer();
 
     @Override
     public AttractionType getType() {

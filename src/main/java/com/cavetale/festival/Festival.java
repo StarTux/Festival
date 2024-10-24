@@ -244,4 +244,8 @@ public final class Festival {
     public Festival hubServer() {
         return server(NetworkServer.HUB);
     }
+
+    public Festival betaServer() {
+        return server(NetworkServer.BETA);
+    }
 }
