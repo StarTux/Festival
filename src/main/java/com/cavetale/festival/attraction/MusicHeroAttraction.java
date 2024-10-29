@@ -8,9 +8,9 @@ import com.cavetale.mytems.event.music.PlayerBeatEvent;
 import com.cavetale.mytems.event.music.PlayerCloseMusicalInstrumentEvent;
 import com.cavetale.mytems.event.music.PlayerMelodyCompleteEvent;
 import com.cavetale.mytems.event.music.PlayerOpenMusicalInstrumentEvent;
-import com.cavetale.mytems.item.font.Glyph;
 import com.cavetale.mytems.item.music.Beat;
 import com.cavetale.mytems.item.music.Melody;
+import com.cavetale.mytems.item.music.MusicalNoteType;
 import com.cavetale.mytems.item.music.Semitone;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -211,13 +211,13 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
         for (Tone tone : Tone.values()) {
             Semitone semitone = music.keys.get(tone);
             if (semitone == null) continue;
-            keys.add(Glyph.toComponent(tone.toString().toLowerCase() + semitone.symbol));
+            keys.add(MusicalNoteType.of(tone, semitone).getMytems().getColoredComponent(BLUE));
         }
         List<Component> notes = new ArrayList<>();
         for (Beat beat : music.melody.getBeats()) {
             if (beat.ticks == 0 || beat.isPause()) continue;
             if (beat.instrument != null) continue;
-            notes.add(text(beat.toString(), BLUE));
+            notes.add(MusicalNoteType.of(beat.getTone(), beat.getSemitone()).getMytems().getColoredComponent(BLACK));
         }
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         book.editMeta(m -> {
