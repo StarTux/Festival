@@ -20,6 +20,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
 import static com.cavetale.festival.booth.hades.FestivalOfHades.festivalOfHades;
+import static com.cavetale.festival.booth.halloween2024.Halloween2024.halloween2024;
 import static com.cavetale.festival.booth.spawn.SpawnFestival.spawnFestival;
 
 public final class FestivalPlugin extends JavaPlugin {
@@ -59,6 +60,7 @@ public final class FestivalPlugin extends JavaPlugin {
         loadFestival(TwinGourds.FESTIVAL);
         loadFestival(festivalOfHades().getFestival());
         loadFestival(spawnFestival().getFestival());
+        loadFestival(halloween2024().getFestival());
     }
 
     private void loadFestival(Festival festival) {
