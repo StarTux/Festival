@@ -10,6 +10,8 @@ import java.util.List;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
@@ -143,6 +145,7 @@ public final class GuessNumberAttraction extends Attraction<GuessNumberAttractio
             changeState(State.IDLE);
         } else {
             openBook(player);
+            player.playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, SoundCategory.MASTER, 1f, 0.5f);
         }
     }
 
