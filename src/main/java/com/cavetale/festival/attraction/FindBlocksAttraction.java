@@ -91,7 +91,7 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         int index = saveTag.blockList.indexOf(Vec3i.of(event.getClickedBlock()));
         if (index < 0) return;
         event.setCancelled(true);
-        Block block = resetBlock(player, index);
+        Block block = resetBlock(index);
         confetti(player, block.getLocation()
                  .add(0.5, 0.5, 0.5)
                  .add(event.getBlockFace().getDirection().multiply(0.5)));
@@ -143,8 +143,6 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         List<Vec3i> possibleBlocks = new ArrayList<>(originBlockSet);
         Collections.shuffle(possibleBlocks, random);
         World w = world;
-        final Player player = getCurrentPlayer();
-        if (player == null) return;
         for (Vec3i vec : possibleBlocks) {
             if (saveTag.blockList.size() >= MAX_BLOCKS) break;
             Block block = vec.toBlock(w);
@@ -252,7 +250,7 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
             BlockData blockData = blockDataList2.get(random.nextInt(blockDataList2.size()));
             saveTag.blockList.add(vec);
             saveTag.blockDataList.add(block.getBlockData().getAsString(false));
-            player.sendBlockChange(block.getLocation(), blockData);
+            block.setBlockData(blockData, false);
         }
         saveTag.searchStarted = System.currentTimeMillis();
         saveTag.blocksFound = 0;
@@ -263,18 +261,18 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         final Player player = getCurrentPlayer();
         if (player == null) return;
         while (!saveTag.blockList.isEmpty()) {
-            resetBlock(player, saveTag.blockList.size() - 1);
+            resetBlock(saveTag.blockList.size() - 1);
         }
         saveTag.blockList = null;
         saveTag.blockDataList = null;
     }
 
-    protected Block resetBlock(Player player, int blockIndex) {
+    protected Block resetBlock(int blockIndex) {
         Vec3i vec = saveTag.blockList.remove(blockIndex);
         String string = saveTag.blockDataList.remove(blockIndex);
         BlockData blockData = Bukkit.createBlockData(string);
         Block block = vec.toBlock(world);
-        player.sendBlockChange(block.getLocation(), blockData);
+        block.setBlockData(blockData, false);
         return block;
     }
 
