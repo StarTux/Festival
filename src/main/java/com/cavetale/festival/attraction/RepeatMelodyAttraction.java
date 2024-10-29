@@ -5,6 +5,7 @@ import com.cavetale.core.event.player.PluginPlayerEvent.Detail;
 import com.cavetale.mytems.item.music.Beat;
 import com.cavetale.mytems.item.music.Melody;
 import com.cavetale.mytems.item.music.MelodyBuilder;
+import com.cavetale.mytems.item.music.MusicalNoteType;
 import com.cavetale.mytems.item.music.Semitone;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -96,18 +97,15 @@ public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttract
         saveTag.state.enter(this);
     }
 
-    private String toString(Beat beat) {
-        return beat.getTone() + (beat.getSemitone() != null ? beat.getSemitone().toString() : "");
-    }
-
     protected void playNote(Player player, Location location) {
-        Beat beat = melody.getBeats().get(saveTag.noteIndex);
+        final Beat newBeat = melody.getBeats().get(saveTag.noteIndex);
         for (Player online : getPlayersIn(mainArea)) {
-            beat.play(melody, online, location);
+            newBeat.play(melody, online, location);
         }
         List<Component> comps = new ArrayList<>();
         for (int i = 0; i <= saveTag.noteIndex; i += 1) {
-            comps.add(text(toString(melody.getBeats().get(i))));
+            final Beat beat = melody.getBeats().get(i);
+            comps.add(MusicalNoteType.of(beat.getTone(), beat.getSemitone()).getMytems().asComponent());
         }
         Component line = join(separator(space()), comps).color(AQUA);
         player.showTitle(Title.title(empty(), line,
