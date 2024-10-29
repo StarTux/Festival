@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
 public final class DummyAttraction extends Attraction<DummyAttraction.SaveTag> {
     protected static final Duration PLAY_TIME = Duration.ofSeconds(30);
     protected int secondsLeft;
-    protected final Set<Vec3i> blocks = new HashSet<>();;
+    protected final Set<Vec3i> blocks = new HashSet<>();
 
     protected DummyAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
