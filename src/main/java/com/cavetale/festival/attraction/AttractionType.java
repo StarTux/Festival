@@ -27,6 +27,7 @@ public enum AttractionType {
     TIC_TAC_TOE("TTT", TicTacToeAttraction.class, TicTacToeAttraction::new),
     GUESS_NUMBER("GNU", GuessNumberAttraction.class, GuessNumberAttraction::new),
     TNT_SWEEP("TNT", TNTSweepAttraction.class, TNTSweepAttraction::new),
+    FISH("FIS", FishAttraction.class, FishAttraction::new),
     ;
 
     public final String shortcut;

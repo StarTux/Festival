@@ -6,6 +6,7 @@ import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.attraction.Attraction;
+import com.cavetale.festival.attraction.FishAttraction;
 import com.cavetale.festival.attraction.MusicHeroAttraction;
 import com.cavetale.festival.session.Session;
 import com.cavetale.magicmap.event.MagicMapCursorEvent;
@@ -34,6 +35,7 @@ import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
@@ -254,5 +256,14 @@ public final class EventListener implements Listener {
         if (festival != null) {
             event.setRespawnLocation(event.getPlayer().getWorld().getSpawnLocation());
         }
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    private void onPlayerFish(PlayerFishEvent event) {
+        plugin.applyAttraction(event.getPlayer().getLocation(), a -> {
+                if (a instanceof FishAttraction fa) {
+                    fa.onPlayerFish(event);
+                }
+            });
     }
 }
