@@ -14,6 +14,7 @@ import com.cavetale.festival.attraction.Attraction;
 import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.attraction.Music;
 import com.cavetale.festival.session.Session;
+import com.cavetale.mytems.item.axis.CuboidOutline;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -101,6 +102,9 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             .completers(this::completeExistingAttractionKeys)
             .description("Reset an attraction value")
             .playerCaller(this::attractionResetValue);
+        attractionNode.addChild("highlight").denyTabCompletion()
+            .description("Highlight all areas")
+            .playerCaller(this::attractionHighlight);
     }
 
     private int requireInt(String arg) {
@@ -331,9 +335,11 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         plugin.clearFestivals();
         plugin.loadFestivals();
         player.sendMessage(text("Area added: " + area, GREEN));
-        area.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.DUST, loc,
-                                                                      1, 0.0, 0.0, 0.0, 0.0,
-                                                                      new Particle.DustOptions(Color.GREEN, 1.0f)));
+        final CuboidOutline outline = new CuboidOutline(player.getWorld(), cuboid);
+        outline.showOnlyTo(player);
+        outline.spawn();
+        outline.removeLater(100L);
+        outline.glow(Color.GREEN);
         return true;
     }
 
@@ -472,5 +478,31 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         plugin.clearFestivals();
         plugin.loadFestivals();
         return true;
+    }
+
+    private void attractionHighlight(Player player) {
+        Festival festival = plugin.getFestival(player.getWorld());
+        if (festival == null) throw new CommandWarn("There is no festival here!");
+        Attraction<?> attraction = festival.getAttraction(player.getLocation());
+        if (attraction == null) throw new CommandWarn("There is no attraction here");
+        int count = 0;
+        for (Area area : attraction.getAllAreas()) {
+            final CuboidOutline outline = new CuboidOutline(player.getWorld(), area.toCuboid());
+            outline.showOnlyTo(player);
+            outline.spawn();
+            outline.removeLater(100L);
+            final Color color = switch (area.getName()) {
+            case null -> Color.YELLOW;
+            case "npc" -> Color.BLUE;
+            case "chest" -> Color.ORANGE;
+            case "pumpkin" -> Color.ORANGE;
+            case "pet" -> Color.ORANGE;
+            case "target" -> Color.ORANGE;
+            default -> Color.GREEN;
+            };
+            outline.glow(color);
+            count += 1;
+        }
+        player.sendMessage(text("Highlighting " + count + " areas of attraction " + attraction.getName(), YELLOW));
     }
 }
