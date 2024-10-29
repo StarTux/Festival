@@ -207,25 +207,26 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
     }
 
     protected void makeMelodyBook() {
-        List<Component> keys = new ArrayList<>();
+        final List<Component> lines = new ArrayList<>();
+        final List<Component> keys = new ArrayList<>();
         for (Tone tone : Tone.values()) {
             Semitone semitone = music.keys.get(tone);
             if (semitone == null) continue;
-            keys.add(MusicalNoteType.of(tone, semitone).getMytems().getColoredComponent(BLUE));
+            keys.add(MusicalNoteType.of(tone, semitone).getMytems().asComponent());
         }
-        List<Component> notes = new ArrayList<>();
+        lines.add(textOfChildren(text("Key "), join(separator(space()), keys)));
+        final List<Component> notes = new ArrayList<>();
         for (Beat beat : music.melody.getBeats()) {
             if (beat.ticks == 0 || beat.isPause()) continue;
             if (beat.instrument != null) continue;
-            notes.add(MusicalNoteType.of(beat.getTone(), beat.getSemitone()).getMytems().getColoredComponent(BLACK));
+            notes.add(MusicalNoteType.of(beat.getTone(), beat.getSemitone()).getMytems().asComponent());
         }
-        ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
+        lines.add(empty());
+        lines.add(join(separator(space()), notes));
+        final ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         book.editMeta(m -> {
                 BookMeta meta = (BookMeta) m;
-                meta.pages(List.of(join(separator(newline()),
-                                        join(separator(space()), keys),
-                                        empty(),
-                                        join(separator(space()), notes))));
+                meta.pages(List.of(join(separator(newline()), lines)));
                 meta.setAuthor("Cavetale");
                 meta.title(displayName);
             });
