@@ -107,7 +107,7 @@ public final class FishAttraction extends Attraction<FishAttraction.SaveTag> {
             }
             saveTag.progress += 1;
             if (saveTag.progress >= requiredScore) {
-                perfect(player, true);
+                victory(player);
                 prepareReward(player, true);
                 festival.sessionOf(player).setCooldown(this, completionCooldown);
                 changeState(State.IDLE);
