@@ -28,7 +28,8 @@ public final class Halloween2024 {
                                     null, // load
                                     null, // unload
                                     null) // gui
-                .creativeServer();
+                .creativeServer()
+                .festivalServer();
         }
         return festival;
     }
