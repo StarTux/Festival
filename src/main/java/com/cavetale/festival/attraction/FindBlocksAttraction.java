@@ -258,8 +258,6 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
     }
 
     protected void onEndSearch() {
-        final Player player = getCurrentPlayer();
-        if (player == null) return;
         while (!saveTag.blockList.isEmpty()) {
             resetBlock(saveTag.blockList.size() - 1);
         }
