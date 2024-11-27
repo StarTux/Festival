@@ -117,7 +117,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
             Zombie zombie = location.getWorld().spawn(location, Zombie.class, s -> {
                     s.setPersistent(false);
                     s.setRemoveWhenFarAway(false);
-                    s.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.15);
+                    s.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.15);
                     s.setGlowing(true);
                 });
             if (zombie != null) {

@@ -176,7 +176,7 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         }
         Location location = block.getLocation().add(0.5, 0.0, 0.5);
         mainVillager.pathing(mob -> {
-                mob.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.48);
+                mob.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.48);
                 mob.setCollidable(false);
                 mob.getPathfinder().moveTo(location, 1.0);
             });

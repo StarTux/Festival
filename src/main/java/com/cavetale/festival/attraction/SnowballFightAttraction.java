@@ -110,7 +110,7 @@ public final class SnowballFightAttraction extends Attraction<SnowballFightAttra
             location.setYaw(random.nextFloat() * 360.0f);
             Snowman snowman = location.getWorld().spawn(location, Snowman.class, s -> {
                     s.setPersistent(false);
-                    s.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.0);
+                    s.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.0);
                     s.setGlowing(true);
                     Bukkit.getMobGoals().removeAllGoals(s);
                 });

@@ -329,7 +329,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
             Cat result = location.getWorld().spawn(location, Cat.class, cat -> {
                     cat.setPersistent(false);
                     cat.setCatType(real ? realType : fakeTypes.get(fakeIndex++));
-                    cat.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.15);
+                    cat.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.15);
                     if (!forShow && random.nextBoolean()) {
                         cat.setBaby();
                     }
@@ -337,7 +337,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
                         cat.setTamed(true);
                         cat.setSitting(true);
                         cat.setSilent(true);
-                        cat.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED).setBaseValue(0.0);
+                        cat.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.0);
                         cat.setCollidable(false);
                         cat.customName(booth.format(realName()));
                     }

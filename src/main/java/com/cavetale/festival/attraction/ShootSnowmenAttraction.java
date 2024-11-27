@@ -17,6 +17,7 @@ import java.util.UUID;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -30,7 +31,6 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 import static net.kyori.adventure.title.Title.Times.times;
 import static net.kyori.adventure.title.Title.title;
-import static org.bukkit.attribute.Attribute.*;
 
 public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttraction.SaveTag> {
     protected Duration gameTime = Duration.ofSeconds(60 * 2);
@@ -263,7 +263,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
             final boolean derp = i < total / 3;
             Snowman snowman = world.spawn(block.getLocation().add(0.5, 0.0, 0.5), Snowman.class, s -> {
                     Entities.setTransient(s);
-                    s.getAttribute(GENERIC_MOVEMENT_SPEED).setBaseValue(0.15);
+                    s.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.15);
                     s.setDerp(derp);
                 });
             if (snowman != null) {
