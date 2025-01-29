@@ -85,7 +85,7 @@ public final class WintersHearth implements Booth {
         DIAMOND_RING(Mytems.WEDDING_RING, // 5
                      "Diamond Ring",
                      "I can't believe I lost my diamond ring. What am I supposed to do now?"),
-        ARMCHAIR(Mytems.RED_ARMCHAIR, // 6
+        ARMCHAIR(Mytems.RED_WOOL_ARMCHAIR, // 6
                  "Comfy Armchair",
                  "I hope Santa brings me something comfortable to sit in and relax."),
         KNITTED_HAT(Mytems.KNITTED_BEANIE, // 7
