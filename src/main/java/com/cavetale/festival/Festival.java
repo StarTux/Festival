@@ -198,18 +198,24 @@ public final class Festival {
         return List.copyOf(attractionsMap.values());
     }
 
-    public Attraction<?> getAttraction(Location location) {
+    public List<Attraction<?>> getAttractionsAt(Location location) {
+        final List<Attraction<?>> result = new ArrayList<>();
         for (Attraction<?> attraction : attractionsMap.values()) {
-            if (attraction.isInArea(location)) return attraction;
+            if (attraction.isInArea(location)) {
+                result.add(attraction);
+            }
         }
-        return null;
+        return result;
     }
 
-    public Attraction<?> getAttraction(Vec3i vector) {
+    public List<Attraction<?>> getAttractionsAt(Vec3i vector) {
+        final List<Attraction<?>> result = new ArrayList<>();
         for (Attraction<?> attraction : attractionsMap.values()) {
-            if (attraction.isInArea(vector)) return attraction;
+            if (attraction.isInArea(vector)) {
+                result.add(attraction);
+            }
         }
-        return null;
+        return result;
     }
 
     public Session sessionOf(Player player) {

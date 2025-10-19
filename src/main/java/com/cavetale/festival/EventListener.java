@@ -16,6 +16,8 @@ import com.cavetale.mytems.event.music.PlayerMelodyCompleteEvent;
 import com.cavetale.mytems.event.music.PlayerOpenMusicalInstrumentEvent;
 import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
 import com.destroystokyo.paper.event.entity.ThrownEggHatchEvent;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -44,6 +46,8 @@ import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.map.MapCursor;
+import static net.kyori.adventure.text.Component.text;
+import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 @RequiredArgsConstructor
 public final class EventListener implements Listener {
@@ -57,7 +61,7 @@ public final class EventListener implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     private void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        for (Attraction attraction : plugin.getAttractions(player.getWorld())) {
+        for (Attraction attraction : plugin.getAttractionsIn(player.getWorld())) {
             attraction.onPlayerQuit(event);
         }
         for (Festival festival : plugin.festivalMap.values()) {
@@ -76,7 +80,7 @@ public final class EventListener implements Listener {
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
     private void onPluginPlayer(PluginPlayerEvent event) {
         Player player = event.getPlayer();
-        for (Attraction attraction : plugin.getAttractions(player.getWorld())) {
+        for (Attraction attraction : plugin.getAttractionsIn(player.getWorld())) {
             if (!attraction.isInArea(player.getLocation())) continue;
             attraction.onPluginPlayer(event);
         }
@@ -85,7 +89,7 @@ public final class EventListener implements Listener {
     @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
     private void onProjectileHit(ProjectileHitEvent event) {
         Projectile entity = event.getEntity();
-        for (Attraction attraction : plugin.getAttractions(entity.getWorld())) {
+        for (Attraction attraction : plugin.getAttractionsIn(entity.getWorld())) {
             if (!attraction.isInArea(entity.getLocation())) continue;
             attraction.onProjectileHit(event);
         }
@@ -95,8 +99,7 @@ public final class EventListener implements Listener {
     private void onEntityDamage(EntityDamageEvent event) {
         Entity entity = event.getEntity();
         Location location = entity.getLocation();
-        Attraction attraction = plugin.getAttraction(location);
-        if (attraction != null && attraction.isInArea(location)) {
+        for (Attraction attraction : plugin.getAttractionsAt(location)) {
             attraction.onEntityDamage(event);
         }
     }
@@ -105,7 +108,7 @@ public final class EventListener implements Listener {
     private void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         Entity entity = event.getEntity();
         Location location = entity.getLocation();
-        for (Attraction attraction : plugin.getAttractions(entity.getWorld())) {
+        for (Attraction attraction : plugin.getAttractionsIn(entity.getWorld())) {
             if (!attraction.isInArea(location)) continue;
             attraction.onEntityDamageByEntity(event);
         }
@@ -113,15 +116,14 @@ public final class EventListener implements Listener {
 
     @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
     private void onEntityCombust(EntityCombustEvent event) {
-        Attraction attraction = plugin.getAttraction(event.getEntity().getLocation());
-        if (attraction == null) return;
-        attraction.onEntityCombust(event);
+        for (Attraction attraction : plugin.getAttractionsAt(event.getEntity().getLocation())) {
+            attraction.onEntityCombust(event);
+        }
     }
 
     @EventHandler(ignoreCancelled = false, priority = EventPriority.LOWEST)
     private void onEntityBlockForm(EntityBlockFormEvent event) {
-        Attraction attraction = plugin.getAttraction(event.getEntity().getLocation());
-        if (attraction != null) {
+        for (Attraction attraction : plugin.getAttractionsAt(event.getEntity().getLocation())) {
             event.setCancelled(true);
         }
     }
@@ -130,7 +132,7 @@ public final class EventListener implements Listener {
     private void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
         Entity entity = event.getRightClicked();
         Location location = entity.getLocation();
-        for (Attraction attraction : plugin.getAttractions(entity.getWorld())) {
+        for (Attraction attraction : plugin.getAttractionsIn(entity.getWorld())) {
             if (!attraction.isInArea(location)) continue;
             attraction.onPlayerInteractEntity(event);
         }
@@ -140,7 +142,7 @@ public final class EventListener implements Listener {
     private void onPlayerInteract(PlayerInteractEvent event) {
         if (!event.hasBlock()) return;
         Location location = event.getClickedBlock().getLocation();
-        for (Attraction attraction : plugin.getAttractions(location.getWorld())) {
+        for (Attraction attraction : plugin.getAttractionsIn(location.getWorld())) {
             if (!attraction.isInArea(location)) continue;
             attraction.onPlayerInteract(event);
         }
@@ -201,15 +203,20 @@ public final class EventListener implements Listener {
 
     @EventHandler
     private void onPlayerHud(PlayerHudEvent event) {
-        Attraction<?> attraction = plugin.getAttraction(event.getPlayer().getLocation());
-        if (attraction == null) return;
-        if (attraction.isPlaying()) {
-            attraction.onPlayerHud(event);
-        }
-        if (event.getPlayer().getGameMode() == GameMode.CREATIVE
-            && !attraction.getDebugLines().isEmpty()
-            && event.getPlayer().hasPermission("festival.testing")) {
-            event.sidebar(PlayerHudPriority.LOW, attraction.getDebugLines());
+        for (Attraction<?> attraction : plugin.getAttractionsAt(event.getPlayer().getLocation())) {
+            if (attraction.isPlaying()) {
+                attraction.onPlayerHud(event);
+            }
+            if (
+                event.getPlayer().getGameMode() == GameMode.CREATIVE
+                && !attraction.getDebugLines().isEmpty()
+                && event.getPlayer().hasPermission("festival.testing")
+            ) {
+                final List<Component> lines = new ArrayList<>();
+                lines.add(text(attraction.getName(), DARK_RED));
+                lines.addAll(attraction.getDebugLines());
+                event.sidebar(PlayerHudPriority.LOW, lines);
+            }
         }
     }
 

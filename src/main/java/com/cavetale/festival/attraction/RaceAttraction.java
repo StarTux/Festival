@@ -9,6 +9,7 @@ import com.cavetale.mytems.Mytems;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
@@ -24,7 +25,7 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
     protected static final Duration COUNTDOWN_TIME = Duration.ofSeconds(3);
-    protected static final Duration MAX_RACE_TIME = Duration.ofSeconds(60);
+    protected Duration maxRaceTime = Duration.ofSeconds(60);
     protected int secondsRaced;
     protected int countdownSeconds;
     protected List<Cuboid> aiCheckpointList = new ArrayList<>();
@@ -52,6 +53,7 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         this.areaNames.add("ai");
         this.areaNames.add("player");
         this.areaNames.add("start");
+        this.intKeys.add("time");
         if (this.aiCheckpointList.isEmpty()) {
             debugLine("No AI checkpoints");
         }
@@ -60,6 +62,16 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         }
         if (Cuboid.ZERO.equals(startArea)) {
             debugLine("No start area");
+        }
+    }
+
+    @Override
+    public void onEnable() {
+        final Map<String, Object> raw = getFirstArea().getRaw() != null
+            ? getFirstArea().getRaw()
+            : Map.of();
+        if (raw.get("time") instanceof Number number) {
+            this.maxRaceTime = Duration.ofSeconds(number.intValue());
         }
     }
 
@@ -123,7 +135,7 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         if (saveTag.playerCheckpointIndex >= playerCheckpointList.size()) return State.IDLE;
         long now = System.currentTimeMillis();
         long time = now - saveTag.raceStarted;
-        if (time > MAX_RACE_TIME.toMillis()) {
+        if (time > maxRaceTime.toMillis()) {
             timeout(player);
             return State.IDLE;
         }
@@ -246,6 +258,6 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         event.bossbar(PlayerHudPriority.HIGHEST,
                       makeProgressComponent(secondsRaced, Mytems.GOLDEN_CUP.component, saveTag.playerCheckpointIndex + 1, playerCheckpointList.size()),
                       BossBar.Color.RED, BossBar.Overlay.PROGRESS,
-                      (float) secondsRaced / (float) MAX_RACE_TIME.toSeconds());
+                      (float) secondsRaced / (float) maxRaceTime.toSeconds());
     }
 }

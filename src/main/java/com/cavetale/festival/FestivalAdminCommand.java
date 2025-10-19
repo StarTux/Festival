@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -187,10 +188,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private boolean sessionReset(Player player, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
+        final Festival festival = plugin.getFestival(player.getWorld());
         if (festival == null) throw new CommandWarn("No festival here!");
-        PlayerCache target = PlayerCache.require(args[0]);
-        Session session = festival.sessions.of(target);
+        final PlayerCache target = PlayerCache.require(args[0]);
+        final Session session = festival.sessions.of(target);
         session.reset();
         session.save();
         festival.sessions.clear(target.uuid);
@@ -200,10 +201,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private boolean sessionComplete(Player player, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
+        final Festival festival = plugin.getFestival(player.getWorld());
         if (festival == null) throw new CommandWarn("No festival here!");
-        PlayerCache target = PlayerCache.require(args[0]);
-        Session session = festival.sessions.of(target);
+        final PlayerCache target = PlayerCache.require(args[0]);
+        final Session session = festival.sessions.of(target);
         for (Attraction<?> attraction : festival.getAttractions()) {
             session.lockUnique(attraction);
         }
@@ -229,11 +230,11 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         Festival festival = plugin.getFestival(player.getWorld());
         if (festival == null) throw new CommandWarn("There is no festival here!");
         Cuboid cuboid = Cuboid.requireSelectionOf(player);
-        for (Attraction attraction : festival.getAttractionsMap().values()) {
-            if (attraction.getMainArea().overlaps(cuboid)) {
-                throw new CommandWarn("Selection overlaps with attraction " + attraction.getName());
-            }
-        }
+        // for (Attraction attraction : festival.getAttractionsMap().values()) {
+        //     if (attraction.getMainArea().overlaps(cuboid)) {
+        //         throw new CommandWarn("Selection overlaps with attraction " + attraction.getName());
+        //     }
+        // }
         AttractionType type = CommandArgCompleter.requireEnum(AttractionType.class, args[0]);
         String name = args[1];
         if (festival.getAttractionsMap().containsKey(name)) {
@@ -283,42 +284,52 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private List<String> completeAreaNames(CommandContext context, CommandNode node, String arg) {
         if (!context.isPlayer()) return List.of();
-        Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
-        if (attraction == null) return List.of();
-        List<String> result = new ArrayList<>();
-        for (String name : attraction.getAreaNames()) {
-            if (name.contains(arg.toLowerCase())) result.add(name);
+        final List<String> result = new ArrayList<>();
+        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
+            for (String name : attraction.getAreaNames()) {
+                if (name.contains(arg.toLowerCase())) result.add(name);
+            }
         }
         return result;
     }
 
     private List<String> completePresentAreaNames(CommandContext context, CommandNode node, String arg) {
         if (!context.isPlayer()) return List.of();
-        Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
-        if (attraction == null) return List.of();
-        List<String> result = new ArrayList<>();
-        boolean first = true;
-        for (var area : attraction.getAllAreas()) {
-            if (first) {
-                first = false;
-                continue;
+        final List<String> result = new ArrayList<>();
+        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
+            boolean first = true;
+            for (var area : attraction.getAllAreas()) {
+                if (first) {
+                    first = false;
+                    continue;
+                }
+                String name = area.getName();
+                if (area == null) continue;
+                if (name.contains(arg.toLowerCase())) result.add(name);
             }
-            String name = area.getName();
-            if (area == null) continue;
-            if (name.contains(arg.toLowerCase())) result.add(name);
         }
         return result;
     }
 
-    private boolean attractionAddArea(Player player, String[] args) {
-        if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
-        Cuboid cuboid = Cuboid.requireSelectionOf(player);
-        Attraction<?> attraction = festival.getAttraction(cuboid.getMin());
-        if (attraction == null) {
+    private Attraction<?> requireSingleAttractionAt(Location location) {
+        final Festival festival = plugin.getFestival(location.getWorld());
+        if (festival == null) {
+            throw new CommandWarn("There is no festival here!");
+        }
+        final List<Attraction<?>> attractions = festival.getAttractionsAt(location);
+        if (attractions.isEmpty()) {
             throw new CommandWarn("There is no attraction here");
         }
+        if (attractions.size() > 1) {
+            throw new CommandWarn("More than one attraction here!");
+        }
+        return attractions.get(0);
+    }
+
+    private boolean attractionAddArea(Player player, String[] args) {
+        if (args.length != 1) return false;
+        final Cuboid cuboid = Cuboid.requireSelectionOf(player);
+        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
         if (!attraction.getMainArea().contains(cuboid)) {
             throw new CommandWarn("Selection is not contained in main area: " + attraction.getName());
         }
@@ -326,10 +337,11 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         if (!attraction.getAreaNames().contains(name)) {
             throw new CommandWarn("Attraction does not require area named " + name + " (" + attraction.getType() + ")");
         }
-        AreasFile areasFile = festival.loadAreasFile();
-        List<Area> areaList = areasFile.getAreas().get(attraction.getName());
+        final Festival festival = attraction.getFestival();
+        final AreasFile areasFile = festival.loadAreasFile();
+        final List<Area> areaList = areasFile.getAreas().get(attraction.getName());
         assert areaList != null;
-        Area area = new Area(cuboid.getMin(), cuboid.getMax(), name, null);
+        final Area area = new Area(cuboid.getMin(), cuboid.getMax(), name, null);
         areaList.add(area);
         areasFile.save(festival.getWorld(), festival.getAreasFileName());
         plugin.clearFestivals();
@@ -345,19 +357,15 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private boolean attractionRemoveArea(Player player, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
         Cuboid cuboid = Cuboid.requireSelectionOf(player);
-        Attraction<?> attraction = festival.getAttraction(cuboid.getMin());
-        if (attraction == null) {
-            throw new CommandWarn("There is no attraction here");
-        }
+        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
         if (!attraction.getMainArea().contains(cuboid)) {
             throw new CommandWarn("Selection is not contained in main area: " + attraction.getName());
         }
         final String name = args[0];
-        AreasFile areasFile = festival.loadAreasFile();
-        List<Area> areaList = areasFile.getAreas().get(attraction.getName());
+        final Festival festival = plugin.getFestival(player.getWorld());
+        final AreasFile areasFile = festival.loadAreasFile();
+        final List<Area> areaList = areasFile.getAreas().get(attraction.getName());
         assert areaList != null;
         Area removedArea = null;
         for (int i = areaList.size() - 1; i > 0; i -= 1) {
@@ -380,24 +388,21 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private List<String> completeAttractionKeys(CommandContext context, CommandNode node, String arg) {
         if (!context.isPlayer()) return List.of();
-        Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
-        if (attraction == null) return List.of();
-        List<String> result = new ArrayList<>();
-        for (String key : attraction.getStringKeys()) {
-            if (key.contains(arg.toLowerCase())) result.add(key);
-        }
-        for (String key : attraction.getIntKeys()) {
-            if (key.contains(arg.toLowerCase())) result.add(key);
+        final List<String> result = new ArrayList<>();
+        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
+            for (String key : attraction.getStringKeys()) {
+                if (key.contains(arg.toLowerCase())) result.add(key);
+            }
+            for (String key : attraction.getIntKeys()) {
+                if (key.contains(arg.toLowerCase())) result.add(key);
+            }
         }
         return result;
     }
 
     private boolean attractionSetValue(Player player, String[] args) {
         if (args.length < 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
-        Attraction<?> attraction = festival.getAttraction(player.getLocation());
-        if (attraction == null) throw new CommandWarn("There is no attraction here");
+        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
         String key = args[0];
         if (args.length < 2) {
             Object value = attraction.getFirstArea().getRaw() != null
@@ -409,9 +414,10 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
                                               text("" + value, YELLOW)));
             return true;
         }
-        String value = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-        AreasFile areasFile = festival.loadAreasFile();
-        List<Area> areas = areasFile.find(attraction.getName());
+        final String value = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
+        final Festival festival = attraction.getFestival();
+        final AreasFile areasFile = festival.loadAreasFile();
+        final List<Area> areas = areasFile.find(attraction.getName());
         Area area = areas.get(0);
         if (area.getRaw() == null) {
             area = area.withRaw(new HashMap<>());
@@ -442,27 +448,26 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private List<String> completeExistingAttractionKeys(CommandContext context, CommandNode node, String arg) {
         if (!context.isPlayer()) return List.of();
-        Attraction<?> attraction = plugin.getAttraction(context.player.getLocation());
-        if (attraction == null) return List.of();
-        Area area = attraction.getFirstArea();
-        if (area.getRaw() == null) return List.of();
-        List<String> result = new ArrayList<>();
-        for (String key : area.getRaw().keySet()) {
-            if (key.contains(arg.toLowerCase())) result.add(key);
+        final List<String> result = new ArrayList<>();
+        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
+            final Area area = attraction.getFirstArea();
+            if (area.getRaw() == null) return List.of();
+            for (String key : area.getRaw().keySet()) {
+                if (key.contains(arg.toLowerCase())) result.add(key);
+            }
         }
         return result;
     }
 
     private boolean attractionResetValue(Player player, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
-        Attraction<?> attraction = festival.getAttraction(player.getLocation());
+        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
         if (attraction == null) throw new CommandWarn("There is no attraction here");
-        String key = args[0];
-        AreasFile areasFile = festival.loadAreasFile();
-        List<Area> areas = areasFile.find(attraction.getName());
-        Area area = areas.get(0);
+        final String key = args[0];
+        final Festival festival = attraction.getFestival();
+        final AreasFile areasFile = festival.loadAreasFile();
+        final List<Area> areas = areasFile.find(attraction.getName());
+        final Area area = areas.get(0);
         if (area.getRaw() == null) {
             throw new CommandWarn("There are no values set");
         }
@@ -481,9 +486,7 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
     }
 
     private void attractionHighlight(Player player) {
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
-        Attraction<?> attraction = festival.getAttraction(player.getLocation());
+        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
         if (attraction == null) throw new CommandWarn("There is no attraction here");
         int count = 0;
         for (Area area : attraction.getAllAreas()) {

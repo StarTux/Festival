@@ -93,7 +93,7 @@ public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttract
         List<Vec3i> blockList = new ArrayList<>(blockSet);
         blockList.removeIf(v -> {
                 final Material mat = v.toBlock(world).getType();
-                return !mat.isEmpty()
+                return !mat.isAir()
                     && mat != Material.PUMPKIN
                     && mat != Material.CARVED_PUMPKIN
                     && mat != Material.JACK_O_LANTERN;

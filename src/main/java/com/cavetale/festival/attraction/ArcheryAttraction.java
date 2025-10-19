@@ -286,6 +286,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         if (vectors.size() != 2) return;
         final Vec3i from = vectors.get(0);
         final Vec3i to = vectors.get(1);
+        final Vec3i toBelow = to.add(0, -1, 0); // For lowered floors, such as dirt paths
         TargetMobData data = saveTag.targetMobs.get(targetMob.key);
         assert data != null;
         for (UUID uuid : List.copyOf(data.uuids)) {
@@ -302,8 +303,8 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                 }
                 cat.setRotation(catYaw, 0.0f);
             }
-            Location mobLocation = entity.getLocation();
-            if (to.contains(mobLocation)) {
+            final Location mobLocation = entity.getLocation();
+            if (to.contains(mobLocation) || toBelow.contains(mobLocation)) {
                 if (entity.getPassengers().isEmpty()) {
                     saveTag.missed += 1;
                     player.sendActionBar(text(targetMob.displayName + " Escaped", RED));

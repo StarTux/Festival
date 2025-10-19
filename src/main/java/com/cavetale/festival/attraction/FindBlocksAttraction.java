@@ -11,6 +11,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Axis;
 import org.bukkit.Bukkit;
@@ -33,14 +35,15 @@ import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.SaveTag> {
-    protected static final List<BlockFace> HORIZONTAL_FACES = List.of(BlockFace.NORTH,
-                                                                      BlockFace.EAST,
-                                                                      BlockFace.SOUTH,
-                                                                      BlockFace.WEST);
+    public static final List<BlockFace> HORIZONTAL_FACES = List.of(BlockFace.NORTH,
+                                                                   BlockFace.EAST,
+                                                                   BlockFace.SOUTH,
+                                                                   BlockFace.WEST);
     protected static final Duration SEARCH_TIME = Duration.ofSeconds(120);
     protected static final int MAX_BLOCKS = 10;
-    Set<Vec3i> originBlockSet = new HashSet<>();
     protected int secondsLeft;
+    private Set<Vec3i> originBlockSet = new HashSet<>();
+    @Setter private Function<Block, BlockData> blockDataFunction;
 
     protected FindBlocksAttraction(final AttractionConfiguration config) {
         super(config, SaveTag.class, SaveTag::new);
@@ -145,109 +148,11 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         World w = world;
         for (Vec3i vec : possibleBlocks) {
             if (saveTag.blockList.size() >= MAX_BLOCKS) break;
-            Block block = vec.toBlock(w);
-            List<List<BlockData>> blockDataList = new ArrayList<>();
-            if (block.isEmpty()) {
-                if (isFloorBlock(block.getRelative(BlockFace.DOWN))) {
-                    blockDataList.add(List.of(new BlockData[] {
-                                Material.LANTERN.createBlockData(bd -> {
-                                        ((Lantern) bd).setHanging(false);
-                                    }),
-                                Material.SOUL_LANTERN.createBlockData(bd -> {
-                                        ((Lantern) bd).setHanging(false);
-                                    }),
-                            }));
-                    List<BlockData> candleList = new ArrayList<>();
-                    for (int candleCount : List.of(1, 2, 3, 4)) {
-                        for (Material mat : Tag.CANDLES.getValues()) {
-                            candleList.add(mat.createBlockData(bd -> {
-                                        ((Candle) bd).setLit(true);
-                                        ((Candle) bd).setCandles(candleCount);
-                                    }));
-                        }
-                    }
-                    blockDataList.add(candleList);
-                    blockDataList.add(List.of(Material.BREWING_STAND.createBlockData(),
-                                              Material.END_ROD.createBlockData(bd -> {
-                                                      ((Directional) bd).setFacing(BlockFace.DOWN);
-                                                  }),
-                                              Material.ENCHANTING_TABLE.createBlockData(),
-                                              Material.CAKE.createBlockData(),
-                                              Material.STONECUTTER.createBlockData(),
-                                              Material.CAULDRON.createBlockData(),
-                                              Material.LAVA_CAULDRON.createBlockData(),
-                                              Material.POWDER_SNOW_CAULDRON.createBlockData(bd -> {
-                                                      ((Levelled) bd).setLevel(((Levelled) bd).getMaximumLevel());
-                                                  }),
-                                              Material.WATER_CAULDRON.createBlockData(bd -> {
-                                                      ((Levelled) bd).setLevel(((Levelled) bd).getMaximumLevel());
-                                                  })));
-                    List<BlockData> flowerPotList = new ArrayList<>();
-                    for (Material mat : Tag.FLOWER_POTS.getValues()) {
-                        flowerPotList.add(mat.createBlockData());
-                    }
-                    blockDataList.add(flowerPotList);
-                    List<BlockData> amethystList = new ArrayList<>();
-                    for (Material mat : List.of(Material.LARGE_AMETHYST_BUD,
-                                                Material.MEDIUM_AMETHYST_BUD,
-                                                Material.SMALL_AMETHYST_BUD)) {
-                        amethystList.add(mat.createBlockData(bd -> {
-                                    ((Directional) bd).setFacing(BlockFace.UP);
-                                }));
-                    }
-                    blockDataList.add(amethystList);
-                }
-                if (isCeilingBlock(block.getRelative(BlockFace.UP))) {
-                    blockDataList.add(List.of(new BlockData[] {
-                                Material.LANTERN.createBlockData(bd -> {
-                                        ((Lantern) bd).setHanging(true);
-                                    }),
-                                Material.SOUL_LANTERN.createBlockData(bd -> {
-                                        ((Lantern) bd).setHanging(true);
-                                    }),
-                            }));
-                    blockDataList.add(List.of(Material.COBWEB.createBlockData(),
-                                              Material.END_ROD.createBlockData(bd -> {
-                                                      ((Directional) bd).setFacing(BlockFace.DOWN);
-                                                  }),
-                                              Material.CHAIN.createBlockData(bd -> {
-                                                      ((Chain) bd).setAxis(Axis.Y);
-                                                  })));
-                    List<BlockData> amethystList = new ArrayList<>();
-                    for (Material mat : List.of(Material.LARGE_AMETHYST_BUD,
-                                                Material.MEDIUM_AMETHYST_BUD,
-                                                Material.SMALL_AMETHYST_BUD)) {
-                        amethystList.add(mat.createBlockData(bd -> {
-                                    ((Directional) bd).setFacing(BlockFace.DOWN);
-                                }));
-                    }
-                    blockDataList.add(amethystList);
-                }
-            } else if (block.isSolid() && block.getType().isOccluding()) {
-                for (BlockFace facing : HORIZONTAL_FACES) {
-                    Block nbor = block.getRelative(facing);
-                    if (nbor.isEmpty() && nbor.getLightFromBlocks() > 0) {
-                        if (block.getType() != Material.SHROOMLIGHT) {
-                            blockDataList.add(List.of(Material.SHROOMLIGHT.createBlockData()));
-                        }
-                        if (block.getType() != Material.JACK_O_LANTERN && block.getType() != Material.CARVED_PUMPKIN) {
-                            blockDataList.add(List.of(new BlockData[] {
-                                        Material.JACK_O_LANTERN.createBlockData(bd -> {
-                                                ((Directional) bd).setFacing(facing);
-                                            }),
-                                        Material.CARVED_PUMPKIN.createBlockData(bd -> {
-                                                ((Directional) bd).setFacing(facing);
-                                            }),
-                                    }));
-                        }
-                    }
-                }
-            } else {
-                continue;
-            }
-            if (blockDataList.isEmpty()) continue;
-            List<BlockData> blockDataList2 = blockDataList.get(random.nextInt(blockDataList.size()));
-            BlockData blockData = blockDataList2.get(random.nextInt(blockDataList2.size()));
+            final Block block = vec.toBlock(w);
+            final BlockData blockData = blockDataFunction != null
+                ? blockDataFunction.apply(block)
+                : computeFakeBlockData(block);
+            if (blockData == null) continue;
             saveTag.blockList.add(vec);
             saveTag.blockDataList.add(block.getBlockData().getAsString(false));
             block.setBlockData(blockData, false);
@@ -255,6 +160,114 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         saveTag.searchStarted = System.currentTimeMillis();
         saveTag.blocksFound = 0;
         saveTag.totalBlocks = saveTag.blockList.size();
+    }
+
+    private BlockData computeFakeBlockData(final Block block) {
+        List<List<BlockData>> blockDataList = new ArrayList<>();
+        if (block.isEmpty()) {
+            if (isFloorBlock(block.getRelative(BlockFace.DOWN))) {
+                blockDataList.add(List.of(new BlockData[] {
+                            Material.LANTERN.createBlockData(bd -> {
+                                    ((Lantern) bd).setHanging(false);
+                                }),
+                            Material.SOUL_LANTERN.createBlockData(bd -> {
+                                    ((Lantern) bd).setHanging(false);
+                                }),
+                        }));
+                List<BlockData> candleList = new ArrayList<>();
+                for (int candleCount : List.of(1, 2, 3, 4)) {
+                    for (Material mat : Tag.CANDLES.getValues()) {
+                        candleList.add(mat.createBlockData(bd -> {
+                                    ((Candle) bd).setLit(true);
+                                    ((Candle) bd).setCandles(candleCount);
+                                }));
+                    }
+                }
+                blockDataList.add(candleList);
+                blockDataList.add(List.of(Material.BREWING_STAND.createBlockData(),
+                                          Material.END_ROD.createBlockData(bd -> {
+                                                  ((Directional) bd).setFacing(BlockFace.DOWN);
+                                              }),
+                                          Material.ENCHANTING_TABLE.createBlockData(),
+                                          Material.CAKE.createBlockData(),
+                                          Material.STONECUTTER.createBlockData(),
+                                          Material.CAULDRON.createBlockData(),
+                                          Material.LAVA_CAULDRON.createBlockData(),
+                                          Material.POWDER_SNOW_CAULDRON.createBlockData(bd -> {
+                                                  ((Levelled) bd).setLevel(((Levelled) bd).getMaximumLevel());
+                                              }),
+                                          Material.WATER_CAULDRON.createBlockData(bd -> {
+                                                  ((Levelled) bd).setLevel(((Levelled) bd).getMaximumLevel());
+                                              })));
+                List<BlockData> flowerPotList = new ArrayList<>();
+                for (Material mat : Tag.FLOWER_POTS.getValues()) {
+                    flowerPotList.add(mat.createBlockData());
+                }
+                blockDataList.add(flowerPotList);
+                List<BlockData> amethystList = new ArrayList<>();
+                for (Material mat : List.of(Material.LARGE_AMETHYST_BUD,
+                                            Material.MEDIUM_AMETHYST_BUD,
+                                            Material.SMALL_AMETHYST_BUD)) {
+                    amethystList.add(mat.createBlockData(bd -> {
+                                ((Directional) bd).setFacing(BlockFace.UP);
+                            }));
+                }
+                blockDataList.add(amethystList);
+            }
+            if (isCeilingBlock(block.getRelative(BlockFace.UP))) {
+                blockDataList.add(List.of(new BlockData[] {
+                            Material.LANTERN.createBlockData(bd -> {
+                                    ((Lantern) bd).setHanging(true);
+                                }),
+                            Material.SOUL_LANTERN.createBlockData(bd -> {
+                                    ((Lantern) bd).setHanging(true);
+                                }),
+                        }));
+                blockDataList.add(List.of(Material.COBWEB.createBlockData(),
+                                          Material.END_ROD.createBlockData(bd -> {
+                                                  ((Directional) bd).setFacing(BlockFace.DOWN);
+                                              }),
+                                          Material.CHAIN.createBlockData(bd -> {
+                                                  ((Chain) bd).setAxis(Axis.Y);
+                                              })));
+                List<BlockData> amethystList = new ArrayList<>();
+                for (Material mat : List.of(Material.LARGE_AMETHYST_BUD,
+                                            Material.MEDIUM_AMETHYST_BUD,
+                                            Material.SMALL_AMETHYST_BUD)) {
+                    amethystList.add(mat.createBlockData(bd -> {
+                                ((Directional) bd).setFacing(BlockFace.DOWN);
+                            }));
+                }
+                blockDataList.add(amethystList);
+            }
+        } else if (block.isSolid() && block.getType().isOccluding()) {
+            for (BlockFace facing : HORIZONTAL_FACES) {
+                Block nbor = block.getRelative(facing);
+                if (nbor.isEmpty() && nbor.getLightFromBlocks() > 0) {
+                    if (block.getType() != Material.SHROOMLIGHT) {
+                        blockDataList.add(List.of(Material.SHROOMLIGHT.createBlockData()));
+                    }
+                    if (block.getType() != Material.JACK_O_LANTERN && block.getType() != Material.CARVED_PUMPKIN) {
+                        blockDataList.add(List.of(new BlockData[] {
+                                    Material.JACK_O_LANTERN.createBlockData(bd -> {
+                                            ((Directional) bd).setFacing(facing);
+                                        }),
+                                    Material.CARVED_PUMPKIN.createBlockData(bd -> {
+                                            ((Directional) bd).setFacing(facing);
+                                        }),
+                                }));
+                    }
+                }
+            }
+        } else {
+            return null;
+        }
+        if (blockDataList.isEmpty()) {
+            return null;
+        }
+        final List<BlockData> blockDataList2 = blockDataList.get(random.nextInt(blockDataList.size()));
+        final BlockData blockData = blockDataList2.get(random.nextInt(blockDataList2.size()));
+        return blockData;
     }
 
     protected void onEndSearch() {

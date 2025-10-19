@@ -8,7 +8,6 @@ import com.cavetale.festival.booth.WintersHearth;
 import com.cavetale.festival.booth.valentine.ValentineBooth;
 import com.cavetale.festival.gui.Gui;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,7 @@ import org.bukkit.block.Block;
 import org.bukkit.plugin.java.JavaPlugin;
 import static com.cavetale.festival.booth.hades.FestivalOfHades.festivalOfHades;
 import static com.cavetale.festival.booth.halloween2024.Halloween2024.halloween2024;
+import static com.cavetale.festival.booth.halloween2025.Halloween2025.halloween2025;
 import static com.cavetale.festival.booth.spawn.SpawnFestival.spawnFestival;
 
 public final class FestivalPlugin extends JavaPlugin {
@@ -61,6 +61,7 @@ public final class FestivalPlugin extends JavaPlugin {
         loadFestival(festivalOfHades().getFestival());
         loadFestival(spawnFestival().getFestival());
         loadFestival(halloween2024().getFestival());
+        loadFestival(halloween2025().getFestival());
     }
 
     private void loadFestival(Festival festival) {
@@ -123,24 +124,16 @@ public final class FestivalPlugin extends JavaPlugin {
         return festival.getAttraction(attractionName);
     }
 
-    public Attraction<?> getAttraction(Location location) {
+    public List<Attraction<?>> getAttractionsAt(Location location) {
         Festival festival = festivalMap.get(location.getWorld().getName());
-        if (festival == null) return null;
-        return festival.getAttraction(location);
+        if (festival == null) return List.of();
+        return festival.getAttractionsAt(location);
     }
 
-    public List<Attraction<?>> getAttractions(World world) {
+    public List<Attraction<?>> getAttractionsIn(World world) {
         Festival festival = festivalMap.get(world.getName());
         if (festival == null) return List.of();
         return festival.getAttractions();
-    }
-
-    public List<Attraction<?>> getAllAttractions() {
-        List<Attraction<?>> result = new ArrayList<>();
-        for (Festival festival : festivalMap.values()) {
-            result.addAll(festival.getAttractions());
-        }
-        return result;
     }
 
     public Festival getFestival(World world) {
