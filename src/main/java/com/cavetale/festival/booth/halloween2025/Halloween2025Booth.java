@@ -80,7 +80,7 @@ public final class Halloween2025Booth implements Booth {
 
     @Override
     public ItemStack getFirstCompletionReward() {
-        return Mytems.HALLOWEEN_TOKEN_2.createItemStack();
+        return Mytems.HALLOWEEN_TOKEN_2.createItemStack(3);
     }
 
     private static final List<List<ItemStack>> PRIZE_POOL = List.of(List.of(Mytems.CANDY_CORN.createItemStack(),
