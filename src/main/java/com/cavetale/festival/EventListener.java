@@ -204,7 +204,7 @@ public final class EventListener implements Listener {
     @EventHandler
     private void onPlayerHud(PlayerHudEvent event) {
         for (Attraction<?> attraction : plugin.getAttractionsAt(event.getPlayer().getLocation())) {
-            if (attraction.isPlaying()) {
+            if (attraction.isPlaying() && attraction.isCurrentPlayer(event.getPlayer())) {
                 attraction.onPlayerHud(event);
             }
             if (
