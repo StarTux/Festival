@@ -60,9 +60,9 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         FROG(Frog.class, "Frog", 120, 0.175, 1.5),
         RABBIT(Rabbit.class, "Rabbit", 100, 0.175, 1.5),
         CHICKEN(Chicken.class, "Chicken", 80, 0.175, 1.25),
-        BEE(Bee.class, "Bee", 240, 0.175, 1.0),
-        SHEEP(Sheep.class, "Sheep", 80, 0.175, 1.0),
-        PIG(Pig.class, "Pig", 80, 0.175, 1.0),
+        BEE(Bee.class, "Bee", 240, 0.175, 1.125),
+        SHEEP(Sheep.class, "Sheep", 80, 0.175, 1.25),
+        PIG(Pig.class, "Pig", 80, 0.175, 1.25),
         ;
 
         public final String key = name().toLowerCase();
