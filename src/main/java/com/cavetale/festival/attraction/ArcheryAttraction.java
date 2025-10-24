@@ -22,6 +22,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Bee;
 import org.bukkit.entity.Cat;
 import org.bukkit.entity.Chicken;
@@ -56,18 +57,20 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
 
     @RequiredArgsConstructor
     public enum TargetMob {
-        FROG(Frog.class, "Frog", 120),
-        RABBIT(Rabbit.class, "Rabbit", 100),
-        CHICKEN(Chicken.class, "Chicken", 80),
-        BEE(Bee.class, "Bee", 240),
-        SHEEP(Sheep.class, "Sheep", 80),
-        PIG(Pig.class, "Pig", 80),
+        FROG(Frog.class, "Frog", 120, 0.175, 1.5),
+        RABBIT(Rabbit.class, "Rabbit", 100, 0.175, 1.5),
+        CHICKEN(Chicken.class, "Chicken", 80, 0.175, 1.25),
+        BEE(Bee.class, "Bee", 240, 0.175, 1.0),
+        SHEEP(Sheep.class, "Sheep", 80, 0.175, 1.0),
+        PIG(Pig.class, "Pig", 80, 0.175, 1.0),
         ;
 
         public final String key = name().toLowerCase();
         public final Class<? extends Mob> entityClass;
         public final String displayName;
         public final int cooldown;
+        public final double speed;
+        public final double scale;
 
         public static TargetMob of(String in) {
             for (TargetMob it : values()) {
@@ -84,6 +87,8 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                     Entities.setTransient(e);
                     if (e instanceof Pig pig) pig.setBaby();
                     if (e instanceof Sheep sheep) sheep.setBaby();
+                    e.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(speed);
+                    e.getAttribute(Attribute.SCALE).setBaseValue(scale);
                 });
         }
     }
