@@ -57,19 +57,18 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
 
     @RequiredArgsConstructor
     public enum TargetMob {
-        FROG(Frog.class, "Frog", 120, 0.175, 1.5),
-        RABBIT(Rabbit.class, "Rabbit", 100, 0.175, 1.5),
-        CHICKEN(Chicken.class, "Chicken", 80, 0.175, 1.25),
-        BEE(Bee.class, "Bee", 240, 0.175, 1.125),
-        SHEEP(Sheep.class, "Sheep", 80, 0.175, 1.25),
-        PIG(Pig.class, "Pig", 80, 0.175, 1.25),
+        FROG(Frog.class, "Frog", 120, 1.5),
+        RABBIT(Rabbit.class, "Rabbit", 100, 1.5),
+        CHICKEN(Chicken.class, "Chicken", 80, 1.25),
+        BEE(Bee.class, "Bee", 240, 1.125),
+        SHEEP(Sheep.class, "Sheep", 80, 1.25),
+        PIG(Pig.class, "Pig", 80, 1.25),
         ;
 
         public final String key = name().toLowerCase();
         public final Class<? extends Mob> entityClass;
         public final String displayName;
         public final int cooldown;
-        public final double speed;
         public final double scale;
 
         public static TargetMob of(String in) {
@@ -87,7 +86,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
                     Entities.setTransient(e);
                     if (e instanceof Pig pig) pig.setBaby();
                     if (e instanceof Sheep sheep) sheep.setBaby();
-                    e.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(speed);
+                    e.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.2);
                     e.getAttribute(Attribute.SCALE).setBaseValue(scale);
                 });
         }
