@@ -222,6 +222,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
                     perfect(shooter, true);
                     prepareReward(shooter, true);
                     changeState(State.IDLE);
+                    festival.sessionOf(shooter).setCooldown(this, completionCooldown);
                 } else {
                     changeState(State.WARMUP);
                     shooter.showTitle(Title.title(empty(),

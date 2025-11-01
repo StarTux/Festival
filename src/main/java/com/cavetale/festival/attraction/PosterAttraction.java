@@ -334,6 +334,7 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
         perfect(player, false);
         prepareReward(player, true);
         changeState(State.WIN);
+        festival.sessionOf(player).setCooldown(this, completionCooldown);
     }
 
     enum State {
