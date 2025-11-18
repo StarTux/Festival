@@ -227,7 +227,7 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
                                           Material.END_ROD.createBlockData(bd -> {
                                                   ((Directional) bd).setFacing(BlockFace.DOWN);
                                               }),
-                                          Material.CHAIN.createBlockData(bd -> {
+                                          Material.IRON_CHAIN.createBlockData(bd -> {
                                                   ((Chain) bd).setAxis(Axis.Y);
                                               })));
                 List<BlockData> amethystList = new ArrayList<>();
