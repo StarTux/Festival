@@ -8,15 +8,19 @@ Use a cuboid selection in the attraction's world for each of the first three com
 For example, select the entire game area, then the NPC block, then each chest in turn.
 
     /festadm attraction create open_chest treasure
-    /festadm attraction set treasure npc
-    /festadm attraction add treasure chest
-    /festadm attraction remove treasure chest 1
+    /festadm attraction setarea npc
+    /festadm attraction addarea chest
+    /festadm attraction rmarea chest 1
 
-Use `set <name> main` to replace the main region. List indices start at 1.
+Stand inside the attraction to edit or highlight it. Use `setarea main` to replace the main region. List indices start at 1.
 Omit the index to remove a named area or its entire list. Use
-`highlight <name>` under the same subcommand to see the saved regions.
-Use `/festadm attraction debug [name]` in chat or the server console to show
-debug lines for one attraction or for all loaded attractions.
+`highlight` under the same subcommand to see the saved regions.
+Use `/festadm attraction debug` in chat or the server console to show debug
+lines for all loaded attractions. The console can also pass an attraction name.
+
+Use `/festadm attraction list [page]` to browse attractions. Hover over a name
+for its type, world, and approximate coordinates. Click it or run
+`/festadm attraction teleport <name>` to teleport.
 
 Each definition lives in `plugins/Festival/attractions/<name>.json`. Its fields
 are `name`, `type`, `world`, `main`, `areas`, `areaLists`, `settings`, and the optional `theme`.
@@ -33,5 +37,6 @@ After editing a file manually, run `/festadm reload`.
 Client plugins can supply an `AttractionConfiguration` to
 `FestivalPlugin.getInstance().register(config)` and unregister it by name.
 Set its optional initializer to customize the attraction before each activation.
-Names are unique across worlds and configuration sources. Player progress is
+Names are unique across worlds and configuration sources and can include dots
+and colons, such as `winter:spawn.parkour`. Player progress is
 stored in `players/<uuid>.json` and attraction runtime state in `state/<name>.json`.

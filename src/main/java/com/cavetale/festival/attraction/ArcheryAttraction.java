@@ -99,7 +99,7 @@ public final class ArcheryAttraction extends SinglePlayerAttraction {
     }
 
     protected ArcheryAttraction(final AttractionConfiguration config) {
-        super(config, "Archery");
+        super(config);
         for (TargetMob targetMob : TargetMob.values()) targetMobs.put(targetMob, new ArrayList<>());
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();

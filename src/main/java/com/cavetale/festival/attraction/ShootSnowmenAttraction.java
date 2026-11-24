@@ -43,7 +43,7 @@ public final class ShootSnowmenAttraction extends SinglePlayerAttraction {
     protected int mobsPerWave = 9;
 
     protected ShootSnowmenAttraction(final AttractionConfiguration config) {
-        super(config, "Snow Golem Attack");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             switch (entry.getKey()) {

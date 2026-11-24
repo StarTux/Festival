@@ -47,7 +47,7 @@ public final class TNTSweepAttraction extends SinglePlayerAttraction {
     private static final int MARKED_TNT = -5;
 
     protected TNTSweepAttraction(final AttractionConfiguration config) {
-        super(config, "TNT Sweep");
+        super(config);
         this.description = text("Reveal slots but avoid the hidden TNT. Numbers indicate how much TNT is adjacent.");
         this.intKeys.add("bombs");
     }

@@ -48,7 +48,7 @@ public final class ZombieFightAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected ZombieFightAttraction(final AttractionConfiguration config) {
-        super(config, "Zombie Defense");
+        super(config);
         this.description = text("Zombies are rising from the graves!"
                                 + " Please show them the meaning of trick or treat and"
                                 + " hit them all with an egg in the face!");

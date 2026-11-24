@@ -36,7 +36,7 @@ public final class CarvePumpkinAttraction extends SinglePlayerAttraction {
     protected int ticks;
 
     protected CarvePumpkinAttraction(final AttractionConfiguration config) {
-        super(config, "Pumpkin Carving");
+        super(config);
         this.description = text("It's pumpkin season. Let's turn them all into Jack o Lanterns!");
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();

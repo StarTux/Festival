@@ -49,7 +49,7 @@ public final class FindBlocksAttraction extends SinglePlayerAttraction {
     @Setter private Function<Block, BlockData> blockDataFunction;
 
     protected FindBlocksAttraction(final AttractionConfiguration config) {
-        super(config, "Hidden Blocks");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             if ("blocks".equals(entry.getKey())) {

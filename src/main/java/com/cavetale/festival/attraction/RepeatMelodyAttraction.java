@@ -1,6 +1,7 @@
 package com.cavetale.festival.attraction;
-import com.cavetale.core.event.player.PluginPlayerEvent.Detail;
+
 import com.cavetale.core.event.player.PluginPlayerEvent;
+import com.cavetale.core.event.player.PluginPlayerEvent.Detail;
 import com.cavetale.mytems.item.music.Beat;
 import com.cavetale.mytems.item.music.Melody;
 import com.cavetale.mytems.item.music.MelodyBuilder;
@@ -19,8 +20,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
-import org.bukkit.Note.Tone;
 import org.bukkit.Note;
+import org.bukkit.Note.Tone;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
@@ -36,7 +37,7 @@ public final class RepeatMelodyAttraction extends SinglePlayerAttraction {
     @Setter protected int octave = 0;
 
     protected RepeatMelodyAttraction(final AttractionConfiguration config) {
-        super(config, "Play the Melody");
+        super(config);
         this.doesRequireInstrument = true;
         this.description = text("I'll give you a melody and you're gonna repeat it. It gets harder every round.");
         Random random2 = new Random(npcVector != null ? npcVector.hashCode() : mainArea.hashCode());

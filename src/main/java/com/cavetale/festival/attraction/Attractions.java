@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -67,7 +68,7 @@ public final class Attractions {
 
     public void register(final AttractionConfiguration config) {
         final String name = config.getName();
-        if (name == null || !name.matches("[A-Za-z0-9_-]+") || config.getType() == null
+        if (!isValidName(name) || config.getType() == null
             || config.getMain() == null || config.getWorld() == null) throw new IllegalArgumentException("Invalid attraction configuration");
         if (configurations.containsKey(name)) throw new IllegalArgumentException("Duplicate attraction " + name);
         if (Bukkit.getWorld(config.getWorld()) != null) activate(config);
@@ -120,6 +121,27 @@ public final class Attractions {
             }
             throw e;
         }
+    }
+
+    public static boolean isValidName(final String name) {
+        return name != null && name.matches("[A-Za-z0-9_.:-]+") && !name.equals(".") && !name.equals("..");
+    }
+
+    public List<AttractionConfiguration> getConfigurations() {
+        return List.copyOf(configurations.values());
+    }
+
+    public AttractionConfiguration getConfiguration(final String name) {
+        return configurations.get(name);
+    }
+
+    public Component getDisplayName(final AttractionConfiguration config) {
+        final Attraction attraction = getAttraction(config.getName());
+        if (attraction != null) return attraction.getDisplayName();
+        final Component configuredName = config.readTextSetting("display_name");
+        return configuredName != null
+            ? configuredName
+            : config.resolveTheme(message -> { }).format(config.getType().getDisplayName());
     }
 
     public boolean hasConfiguration(final String name) {

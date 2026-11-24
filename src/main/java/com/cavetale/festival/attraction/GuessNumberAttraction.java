@@ -38,7 +38,7 @@ public final class GuessNumberAttraction extends SinglePlayerAttraction {
     protected long secondsLeft;
 
     protected GuessNumberAttraction(final AttractionConfiguration config) {
-        super(config, "Guess the Number");
+        super(config);
         this.description = text("I will think of a number between 1 and 100. You may guess 7 times.");
     }
 
@@ -57,7 +57,7 @@ public final class GuessNumberAttraction extends SinglePlayerAttraction {
                                           Mytems.ARROW_RIGHT, text(" Click here to make a guess", GREEN),
                                           newline())
                            .hoverEvent(showText(text("Open the guessing selection")))
-                           .clickEvent(runCommand("/fest send " + name)));
+                           .clickEvent(runCommand("/fest send")));
     }
 
     @Override
@@ -169,7 +169,7 @@ public final class GuessNumberAttraction extends SinglePlayerAttraction {
                     } else {
                         numbers.add(text(subscript(i), BLUE)
                                     .hoverEvent(showText(text("Guess " + i, BLUE)))
-                                    .clickEvent(runCommand("/fest send " + name + " " + i)));
+                                    .clickEvent(runCommand("/fest send " + i)));
                     }
                 }
                 lines.add(join(separator(space()), numbers));

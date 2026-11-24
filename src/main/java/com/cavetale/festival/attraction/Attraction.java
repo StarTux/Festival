@@ -1,5 +1,6 @@
 package com.cavetale.festival.attraction;
 
+import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.connect.NetworkServer;
 import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.hud.PlayerHudEvent;
@@ -13,8 +14,8 @@ import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.core.util.Json;
 import com.cavetale.festival.FestivalPlugin;
-import com.cavetale.festival.event.AttractionCompleteEvent;
 import com.cavetale.festival.FestivalTheme;
+import com.cavetale.festival.event.AttractionCompleteEvent;
 import com.cavetale.festival.gui.Gui;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.Mytems;
@@ -103,7 +104,7 @@ public abstract class Attraction {
     @Setter protected boolean disabled = false;
 
     protected Attraction(final AttractionConfiguration config) {
-        this(config, config.getName());
+        this(config, config.getType().getDisplayName());
     }
 
     protected Attraction(final AttractionConfiguration config, final String defaultDisplayName) {
@@ -130,6 +131,7 @@ public abstract class Attraction {
         }
         this.areaNames.add("npc");
         this.stringKeys.add("description");
+        this.stringKeys.add("display_name");
     }
 
     public final void debugLine(String txt) {
@@ -144,6 +146,13 @@ public abstract class Attraction {
         plugin.getLogger().info("[" + name + "] " + msg);
     }
 
+    public static Attraction requireAt(final Location location) {
+        final List<Attraction> attractions = FestivalPlugin.getInstance().getAttractionsAt(location);
+        if (attractions.isEmpty()) throw new CommandWarn("You are not inside an attraction.");
+        if (attractions.size() > 1) throw new CommandWarn("More than one attraction overlaps this location.");
+        return attractions.getFirst();
+    }
+
     public final boolean isInArea(Location location) {
         return world.equals(location.getWorld()) && mainArea.contains(location);
     }
@@ -156,8 +165,8 @@ public abstract class Attraction {
 
     public abstract SaveTag getSaveTag();
 
-    protected final <T extends SaveTag> T readSaveTag(final Class<T> type, final Supplier<T> fallback) {
-        return Json.load(saveFile, type, fallback);
+    protected final <T extends SaveTag> T readSaveTag(final Class<T> clazz, final Supplier<T> fallback) {
+        return Json.load(saveFile, clazz, fallback);
     }
 
     public final void load() {
@@ -174,10 +183,12 @@ public abstract class Attraction {
     }
 
     public final void enable() {
-        if (displayName == null) displayName = theme.format(defaultDisplayName);
-        if (configuration.getSettings().get("description") instanceof String desc) {
-            this.description = text(desc);
+        if (displayName == null) {
+            final Component configuredName = configuration.readTextSetting("display_name");
+            displayName = configuredName != null ? configuredName : theme.format(defaultDisplayName);
         }
+        final Component configuredDescription = configuration.readTextSetting("description");
+        if (configuredDescription != null) description = configuredDescription;
         if (disabled) return;
         onEnable();
         if (npcVector == null) {
@@ -450,18 +461,18 @@ public abstract class Attraction {
     }
 
     protected final boolean takeEntryFee(Player player) {
-        ItemStack entryFee = getEntryFee();
         for (ItemStack itemStack : player.getInventory()) {
             if (entryFee.isSimilar(itemStack)) {
                 itemStack.subtract(1);
                 return true;
             }
         }
-        Component message = join(noSeparators(),
-                                 text("You don't have "),
-                                 ItemKinds.chatDescription(getEntryFee()),
-                                 text("!"))
-            .color(RED);
+        Component message = join(
+            noSeparators(),
+            text("You don't have "),
+            ItemKinds.chatDescription(getEntryFee()),
+            text("!")
+        ).color(RED);
         player.sendMessage(message);
         player.sendActionBar(message);
         return false;
@@ -508,11 +519,11 @@ public abstract class Attraction {
                                       text("?"),
                                       newline(),
                                       (DefaultFont.START_BUTTON.component
-                                       .clickEvent(ClickEvent.runCommand("/fest yes " + name))
+                                       .clickEvent(ClickEvent.runCommand("/fest yes"))
                                        .hoverEvent(HoverEvent.showText(text("Play this Game", GREEN)))),
                                       space(),
                                       (DefaultFont.CANCEL_BUTTON.component
-                                       .clickEvent(ClickEvent.runCommand("/fest no " + name))
+                                       .clickEvent(ClickEvent.runCommand("/fest no"))
                                        .hoverEvent(HoverEvent.showText(text("Goodbye!", RED)))));
                 meta.setAuthor("Cavetale");
                 meta.title(text("Festival"));
@@ -589,11 +600,6 @@ public abstract class Attraction {
                                           Color.fromRGB(random.nextInt(256), random.nextInt(256), random.nextInt(256)));
     }
 
-    protected final void highlight(Player player, Location location) {
-        Particle.DustOptions dustOptions = new Particle.DustOptions(Color.WHITE, 4.0f);
-        player.spawnParticle(Particle.DUST, location, 4, 1.0, 1.0, 1.0, 1.0, dustOptions);
-    }
-
     public final List<Player> getPlayersIn(Cuboid area) {
         List<Player> result = new ArrayList<>();
         for (Player player : world.getPlayers()) {
@@ -614,11 +620,6 @@ public abstract class Attraction {
     public void onPlayerHud(PlayerHudEvent event) { }
 
 
-    /**
-     * Command via /fest send <attraction> <args...>
-     * The <attraction> argument has already been omitted, so we
-     * receive only the extraneous args.  The player has yet to be
-     * verified as a participant.
-     */
+    /** Command via /fest send <args...> from inside this attraction. */
     public void onCommand(Player player, String[] args) { }
 }

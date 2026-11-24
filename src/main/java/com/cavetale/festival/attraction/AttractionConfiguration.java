@@ -10,6 +10,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import lombok.Data;
+import net.kyori.adventure.text.Component;
+import static net.kyori.adventure.text.minimessage.MiniMessage.miniMessage;
 
 @Data
 public final class AttractionConfiguration {
@@ -25,6 +27,10 @@ public final class AttractionConfiguration {
 
     /** Applied before enable, including when the world is loaded again. */
     private transient Consumer<Attraction> initializer;
+
+    Component readTextSetting(final String key) {
+        return settings.get(key) instanceof String value ? miniMessage().deserialize(value) : null;
+    }
 
     FestivalTheme resolveTheme(final Consumer<String> debugLine) {
         if (customTheme != null) return customTheme;

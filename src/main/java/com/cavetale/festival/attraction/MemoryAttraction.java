@@ -31,7 +31,7 @@ public final class MemoryAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected MemoryAttraction(final AttractionConfiguration config) {
-        super(config, "Memory Game");
+        super(config);
         Set<Vec3i> memoryBlockSet = new HashSet<>();
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid cuboid = entry.getValue();

@@ -50,7 +50,7 @@ public final class ShootTargetAttraction extends SinglePlayerAttraction {
     private final Map<UUID, Vec3i> targetGhastMap = new HashMap<>();
 
     protected ShootTargetAttraction(final AttractionConfiguration config) {
-        super(config, "Bull's Eye!");
+        super(config);
         List<Cuboid> list = new ArrayList<>();
         List<Cuboid> ghastList = new ArrayList<>();
         Set<Vec3i> set = new HashSet<>();

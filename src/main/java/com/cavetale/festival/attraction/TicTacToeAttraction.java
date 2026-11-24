@@ -38,7 +38,7 @@ public final class TicTacToeAttraction extends SinglePlayerAttraction {
     protected Cuboid boardArea;
 
     protected TicTacToeAttraction(final AttractionConfiguration config) {
-        super(config, "Tic Tac Toe");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             switch (entry.getKey()) {

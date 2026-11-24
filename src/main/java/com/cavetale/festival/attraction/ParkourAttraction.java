@@ -27,7 +27,7 @@ public final class ParkourAttraction extends SinglePlayerAttraction {
     protected Cuboid goal = Cuboid.ZERO;
 
     protected ParkourAttraction(final AttractionConfiguration config) {
-        super(config, "Parkour");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             switch (entry.getKey()) {

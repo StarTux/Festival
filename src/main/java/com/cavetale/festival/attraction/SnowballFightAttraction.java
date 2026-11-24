@@ -45,7 +45,7 @@ public final class SnowballFightAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected SnowballFightAttraction(final AttractionConfiguration config) {
-        super(config, "Snowball Fight");
+        super(config);
         Set<Vec3i> snowmanBlockSet = new HashSet<>();
         Set<Vec3i> noSnowmanBlockSet = new HashSet<>();
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {

@@ -21,7 +21,7 @@ public final class DummyAttraction extends SinglePlayerAttraction {
     protected final Set<Vec3i> blocks = new HashSet<>();
 
     protected DummyAttraction(final AttractionConfiguration config) {
-        super(config, "Dummy Attraction");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             if ("name".equals(entry.getKey())) {
@@ -29,6 +29,7 @@ public final class DummyAttraction extends SinglePlayerAttraction {
             }
         }
         this.description = Component.text("Hello");
+        this.areaNames.add("name");
     }
 
     @Override

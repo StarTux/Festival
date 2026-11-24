@@ -33,7 +33,7 @@ public final class OpenChestAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected OpenChestAttraction(final AttractionConfiguration config) {
-        super(config, "Chest Game");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid cuboid = entry.getValue();
             if ("chest".equals(entry.getKey())) {

@@ -43,7 +43,7 @@ public final class FindSpidersAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected FindSpidersAttraction(final AttractionConfiguration config) {
-        super(config, "Spider Hunt");
+        super(config);
         Set<Vec3i> spiderSet = new HashSet<>();
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();

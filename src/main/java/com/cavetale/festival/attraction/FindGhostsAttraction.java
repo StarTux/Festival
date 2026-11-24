@@ -38,7 +38,7 @@ public final class FindGhostsAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected FindGhostsAttraction(final AttractionConfiguration config) {
-        super(config, "Ghostbusters");
+        super(config);
         this.description = text("Help! My house is haunted."
                                 + " I can't even see them but they are scary."
                                 + " Can you get rid of them all?");

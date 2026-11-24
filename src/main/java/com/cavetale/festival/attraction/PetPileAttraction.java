@@ -47,7 +47,7 @@ public final class PetPileAttraction extends SinglePlayerAttraction {
     protected int secondsLeft;
 
     protected PetPileAttraction(final AttractionConfiguration config) {
-        super(config, "Pet Pile");
+        super(config);
         this.description = text("Can you help me sort out my pets?");
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();

@@ -32,7 +32,7 @@ public final class TradeChainAttraction extends Attraction {
     @Setter protected String dialogue = "";
 
     protected TradeChainAttraction(final AttractionConfiguration config) {
-        super(config, "Trade Chain");
+        super(config);
         this.stringKeys.add("want");
         this.stringKeys.add("give");
         this.stringKeys.add("dialogue");
@@ -92,11 +92,11 @@ public final class TradeChainAttraction extends Attraction {
                                           theme.format("Do you have an item that could help me?"),
                                           newline(),
                                           (DefaultFont.YES_BUTTON.component
-                                           .clickEvent(runCommand("/fest yes " + name))
+                                           .clickEvent(runCommand("/fest yes"))
                                            .hoverEvent(showText(text("Give Item", GREEN)))),
                                           space(),
                                           (DefaultFont.NO_BUTTON.component
-                                           .clickEvent(runCommand("/fest no " + name))
+                                           .clickEvent(runCommand("/fest no"))
                                            .hoverEvent(showText(text("Maybe Later", RED)))),
                                           newline(), newline(),
                                           (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))

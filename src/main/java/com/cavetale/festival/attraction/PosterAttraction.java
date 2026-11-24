@@ -37,7 +37,7 @@ public final class PosterAttraction extends SinglePlayerAttraction {
     private long secondsLeft;
 
     protected PosterAttraction(final AttractionConfiguration config) {
-        super(config, "Picture Puzzle");
+        super(config);
         this.description = text("Can you unscramble my painting?");
         Vec3i posterX = null;
         Vec3i posterY = null;

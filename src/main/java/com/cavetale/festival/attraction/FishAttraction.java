@@ -25,7 +25,7 @@ public final class FishAttraction extends SinglePlayerAttraction {
     private int requiredScore = 3;
 
     protected FishAttraction(final AttractionConfiguration config) {
-        super(config, "Candy Fishing");
+        super(config);
         this.description = text("Can you catch " + requiredScore + " Halloween Candies out of the water in time?");
     }
 

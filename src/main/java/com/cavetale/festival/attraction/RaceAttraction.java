@@ -34,7 +34,7 @@ public final class RaceAttraction extends SinglePlayerAttraction {
     protected Cuboid startArea = Cuboid.ZERO;
 
     protected RaceAttraction(final AttractionConfiguration config) {
-        super(config, "Race Me");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             if ("ai".equals(entry.getKey())) {

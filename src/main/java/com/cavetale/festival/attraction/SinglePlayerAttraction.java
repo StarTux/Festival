@@ -4,6 +4,9 @@ import java.time.Duration;
 import java.util.UUID;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerQuitEvent;
 import static net.kyori.adventure.text.Component.join;
@@ -68,6 +71,11 @@ public abstract class SinglePlayerAttraction extends Attraction {
         player.sendMessage(message);
         player.sendActionBar(message);
         return false;
+    }
+
+    protected final void highlight(final Player player, final Location location) {
+        final Particle.DustOptions dustOptions = new Particle.DustOptions(Color.WHITE, 4.0f);
+        player.spawnParticle(Particle.DUST, location, 4, 1.0, 1.0, 1.0, 1.0, dustOptions);
     }
 
     protected abstract static class SaveTag extends Attraction.SaveTag {

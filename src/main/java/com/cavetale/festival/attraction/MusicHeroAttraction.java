@@ -48,7 +48,7 @@ public final class MusicHeroAttraction extends SinglePlayerAttraction {
     protected ItemStack melodyBook;
 
     protected MusicHeroAttraction(final AttractionConfiguration config) {
-        super(config, "Music Hero");
+        super(config);
         for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
             final Cuboid area = entry.getValue();
             if ("lectern".equals(entry.getKey())) {
