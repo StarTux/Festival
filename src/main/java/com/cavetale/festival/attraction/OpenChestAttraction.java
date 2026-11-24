@@ -1,15 +1,17 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.font.Unicode;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.session.Session;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
+import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -24,25 +26,31 @@ import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class OpenChestAttraction extends Attraction<OpenChestAttraction.SaveTag> {
+public final class OpenChestAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration OPEN_TIME = Duration.ofSeconds(30);
     protected Set<Vec3i> chestBlockSet = new HashSet<>();
     protected int secondsLeft;
 
     protected OpenChestAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area cuboid : allAreas) {
-            if ("chest".equals(cuboid.name)) {
+        super(config, "Chest Game");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid cuboid = entry.getValue();
+            if ("chest".equals(entry.getKey())) {
                 chestBlockSet.addAll(cuboid.enumerate());
             }
         }
-        this.displayName = text("Chest Game", DARK_RED);
         this.description = text("Choose one of my chests and keep"
                                 + " what you find inside!");
         this.areaNames.add("chest");
         if (this.chestBlockSet.isEmpty()) {
             debugLine("No chest blocks");
         }
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -96,7 +104,7 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
         confetti(player, location);
         progress(player);
         final boolean bingo = saveTag.treasureChest.equals(Vec3i.of(block));
-        final Session session = festival.sessionOf(player);
+        final Session session = plugin.getSessions().of(player);
         if (bingo) {
             perfect(player);
             giveReward(player, bingo);
@@ -131,7 +139,7 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
             blockData.setFacing(horizontalBlockFace(npcVector.subtract(vec)));
             block.setBlockData(blockData);
         }
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         final int completionCount = session.getCompletionCount(this);
         int hash = player.getUniqueId().hashCode();
         hash = hash * 31 + completionCount;
@@ -209,7 +217,7 @@ public final class OpenChestAttraction extends Attraction<OpenChestAttraction.Sa
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long openStarted;
         protected List<Vec3i> blockList;

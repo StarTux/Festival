@@ -1,8 +1,8 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.Mytems;
 import com.destroystokyo.paper.event.entity.EntityPathfindEvent;
@@ -11,8 +11,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.title.Title;
@@ -37,7 +39,8 @@ import org.bukkit.util.Vector;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 
-public final class ZombieFightAttraction extends Attraction<ZombieFightAttraction.SaveTag> {
+public final class ZombieFightAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected final Duration playTime = Duration.ofSeconds(60);
     protected final Duration warmupTime = Duration.ofSeconds(5);
     protected final List<Vec3i> zombieBlocks = new ArrayList<>();
@@ -45,17 +48,17 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
     protected int secondsLeft;
 
     protected ZombieFightAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        this.displayName = booth.format("Zombie Defense");
+        super(config, "Zombie Defense");
         this.description = text("Zombies are rising from the graves!"
                                 + " Please show them the meaning of trick or treat and"
                                 + " hit them all with an egg in the face!");
         Set<Vec3i> zombieBlockSet = new HashSet<>();
         Set<Vec3i> noZombieBlockSet = new HashSet<>();
-        for (Area area : allAreas) {
-            if ("zombie".equals(area.name)) {
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("zombie".equals(entry.getKey())) {
                 zombieBlockSet.addAll(area.enumerate());
-            } else if ("nozombie".equals(area.name)) {
+            } else if ("nozombie".equals(entry.getKey())) {
                 noZombieBlockSet.addAll(area.enumerate());
             }
         }
@@ -66,6 +69,11 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
         if (zombieBlocks.isEmpty()) {
             debugLine("No zombie blocks");
         }
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -156,7 +164,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
             player.getInventory().addItem(new ItemStack(Material.EGG, 16));
             startingGun(player);
             player.showTitle(Title.title(empty(),
-                                         booth.format("Round " + saveTag.round + "/" + totalRounds),
+                                         theme.format("Round " + saveTag.round + "/" + totalRounds),
                                          Title.Times.times(Duration.ZERO,
                                                            Duration.ofSeconds(1),
                                                            Duration.ZERO)));
@@ -190,7 +198,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
             player.playSound(player.getLocation(), Sound.ENTITY_SNOW_GOLEM_SHOOT,
                              SoundCategory.MASTER, 1.0f, 1.5f);
             player.showTitle(Title.title(empty(),
-                                         booth.format("pew"),
+                                         theme.format("pew"),
                                          Title.Times.times(Duration.ZERO,
                                                            Duration.ofMillis(500L),
                                                            Duration.ZERO)));
@@ -205,7 +213,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
         if (event.getEntity() instanceof Player target) {
             if (!target.equals(getCurrentPlayer())) return;
             if (!(egg.getShooter() instanceof Zombie)) return;
-            target.sendActionBar(booth.format("You were hit by a egg!"));
+            target.sendActionBar(theme.format("You were hit by a egg!"));
             fail(target);
             stop();
         } else if (event.getEntity() instanceof Zombie target) {
@@ -222,11 +230,11 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
                     perfect(shooter, true);
                     prepareReward(shooter, true);
                     changeState(State.IDLE);
-                    festival.sessionOf(shooter).setCooldown(this, completionCooldown);
+                    plugin.getSessions().of(shooter).setCooldown(this, completionCooldown);
                 } else {
                     changeState(State.WARMUP);
                     shooter.showTitle(Title.title(empty(),
-                                                  booth.format("Round complete!"),
+                                                  theme.format("Round complete!"),
                                                   Title.Times.times(Duration.ZERO,
                                                                     Duration.ofSeconds(1),
                                                                     Duration.ZERO)));
@@ -282,7 +290,7 @@ public final class ZombieFightAttraction extends Attraction<ZombieFightAttractio
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long warmupStarted;
         protected long playStarted;

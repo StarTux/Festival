@@ -1,61 +1,23 @@
 package com.cavetale.festival;
 
+import com.cavetale.festival.attraction.Music;
+import com.cavetale.mytems.item.music.Melody;
 import com.cavetale.resident.ZoneType;
+import java.util.function.Function;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NonNull;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.format.NamedTextColor.*;
-import static net.kyori.adventure.text.format.TextColor.color;
 
-public enum FestivalTheme {
-    TESTING {
-        @Override public Component format(String txt) {
-            return text(txt, GREEN);
-        }
+@Getter
+@Builder(toBuilder = true)
+public final class FestivalTheme {
+    @NonNull @Builder.Default private final Melody successMelody = Music.TREASURE.melody;
+    @NonNull @Builder.Default private final Melody failMelody = Music.DECKED_OUT.melody;
+    @NonNull @Builder.Default private final Function<String, Component> formatter = Component::text;
+    @NonNull @Builder.Default private final ZoneType zoneType = ZoneType.SPAWN;
 
-        @Override public ZoneType getZoneType() {
-            return ZoneType.SPAWN;
-        }
-    },
-    HALLOWEEN {
-        @Override public Component format(String txt) {
-            TextComponent.Builder builder = text();
-            for (int i = 0; i < txt.length(); i += 1) {
-                builder.append(text(txt.charAt(i), i % 2 == 0 ? GOLD : RED));
-            }
-            return builder.build();
-        }
-
-        @Override public ZoneType getZoneType() {
-            return ZoneType.HALLOWEEN;
-        }
-    },
-    CHRISTMAS {
-        @Override public Component format(String txt) {
-            TextComponent.Builder builder = text();
-            for (int i = 0; i < txt.length(); i += 1) {
-                builder.append(text(txt.substring(i, i + 1),
-                                    i % 2 == 0 ? color(0xE40010) : color(0x00B32C)));
-            }
-            return builder.build();
-        };
-
-        @Override public ZoneType getZoneType() {
-            return ZoneType.CHRISTMAS;
-        }
-    },
-    VALENTINE {
-        @Override public Component format(String txt) {
-            return text(txt, color(0xFF69B4));
-        };
-
-        @Override public ZoneType getZoneType() {
-            return ZoneType.NONE;
-        }
-    },
-    ;
-
-    public abstract Component format(String txt);
-
-    public abstract ZoneType getZoneType();
+    public Component format(final String value) {
+        return formatter.apply(value);
+    }
 }

@@ -1,7 +1,7 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.font.Unicode;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.Mytems;
 import com.cavetale.mytems.event.music.PlayerBeatEvent;
@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
@@ -38,7 +39,8 @@ import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.SaveTag> {
+public final class MusicHeroAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration WARMUP_TIME = Duration.ofSeconds(30);
     protected int secondsLeft;
     @Setter protected Music music = Music.ALLE_MEINE_ENTCHEN;
@@ -46,19 +48,19 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
     protected ItemStack melodyBook;
 
     protected MusicHeroAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if ("lectern".equals(area.name)) {
+        super(config, "Music Hero");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("lectern".equals(entry.getKey())) {
                 if (lecternBlock != null) {
                     debugLine("Dupcliate lectern block");
                 }
                 if (area.getVolume() != 1) {
                     debugLine("Lectern area bigger than 1");
                 }
-                lecternBlock = area.min;
+                lecternBlock = area.getMin();
             }
         }
-        this.displayName = text("Music Hero", RED);
         this.description = text("Play the notes while they're on your instrument."
                                 + " Don't miss a single note for the prize!");
         this.doesRequireInstrument = true;
@@ -70,10 +72,13 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     public void onEnable() {
-        Map<String, Object> raw = getFirstArea().getRaw() != null
-            ? getFirstArea().getRaw()
-            : Map.of();
+        final Map<String, Object> raw = configuration.getSettings();
         if (raw.get("music") instanceof String musicName) {
             try {
                 this.music = Music.valueOf(musicName.toUpperCase());
@@ -166,13 +171,13 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
             player.closeInventory();
             perfect(player, false);
             music.melody.play(plugin, player.getLocation());
-            festival.sessionOf(player).setCooldown(this, completionCooldown);
+            plugin.getSessions().of(player).setCooldown(this, completionCooldown);
             prepareReward(player, true);
         } else {
             player.closeInventory();
             player.showTitle(Title.title(text(finalScore + "/" + maximumScore, DARK_RED),
                                          text("Try again!", DARK_RED)));
-            festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(20));
+            plugin.getSessions().of(player).setCooldown(this, Duration.ofSeconds(20));
         }
         changeState(State.IDLE);
     }
@@ -271,7 +276,7 @@ public final class MusicHeroAttraction extends Attraction<MusicHeroAttraction.Sa
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long playStarted;
         protected long warmupStarted;

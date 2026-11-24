@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.Unicode;
@@ -10,6 +9,8 @@ import com.cavetale.festival.session.Session;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -30,21 +31,21 @@ import static net.kyori.adventure.title.Title.title;
 /**
  * Dummy attraction for the purpose of copy and paste.
  */
-public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.SaveTag> {
+public final class TicTacToeAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration GAME_TIME = Duration.ofSeconds(60);
     protected long secondsLeft;
     protected Cuboid boardArea;
 
     protected TicTacToeAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-            switch (area.name) {
-            case "board": this.boardArea = area.toCuboid();
+        super(config, "Tic Tac Toe");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            switch (entry.getKey()) {
+            case "board": this.boardArea = area;
             default: break;
             }
         }
-        this.displayName = booth.format("Tic Tac Toe");
         this.description = text("We take turns to place blocks. First to place 3 in a row wins the game.");
         if (boardArea == null) {
             debugLine("Missing board");
@@ -52,6 +53,11 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
             debugLine("Invalid board size: " + boardArea.getVolume() + "/" + 9);
         }
         this.areaNames.add("board");
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -117,7 +123,7 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
         Player player = getCurrentPlayer();
         if (player == null) return State.IDLE;
         if (!updateTimer(player)) return State.IDLE;
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         return null;
     }
 
@@ -143,7 +149,7 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
         if (board.getWinner() == 1) {
             perfect(player);
             prepareReward(player, true);
-            festival.sessionOf(player).setCooldown(this, completionCooldown);
+            plugin.getSessions().of(player).setCooldown(this, completionCooldown);
             changeState(State.WIN);
         } else {
             changeState(State.COMPUTER_TURN);
@@ -248,7 +254,7 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected int aiTicks;
@@ -381,8 +387,8 @@ public final class TicTacToeAttraction extends Attraction<TicTacToeAttraction.Sa
     @Override
     public void onPlayerHud(PlayerHudEvent event) {
         Component text = switch (saveTag.state) {
-        case PLAYER_TURN -> booth.format(Unicode.WATCH.string + secondsLeft + " Your turn");
-        case COMPUTER_TURN -> booth.format(Unicode.WATCH.string + secondsLeft + " My turn...");
+        case PLAYER_TURN -> theme.format(Unicode.WATCH.string + secondsLeft + " Your turn");
+        case COMPUTER_TURN -> theme.format(Unicode.WATCH.string + secondsLeft + " My turn...");
         case WIN -> text("You win!", GREEN);
         case LOSE -> text("I win!", DARK_RED);
         case DRAW -> text("Nobody wins!", DARK_RED);

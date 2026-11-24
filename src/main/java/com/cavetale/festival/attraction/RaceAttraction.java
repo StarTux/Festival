@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.struct.Cuboid;
@@ -10,6 +9,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
@@ -23,7 +23,8 @@ import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
+public final class RaceAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration COUNTDOWN_TIME = Duration.ofSeconds(3);
     protected Duration maxRaceTime = Duration.ofSeconds(60);
     protected int secondsRaced;
@@ -33,20 +34,20 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
     protected Cuboid startArea = Cuboid.ZERO;
 
     protected RaceAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if ("ai".equals(area.name)) {
-                aiCheckpointList.add(area.toCuboid());
-            } else if ("player".equals(area.name)) {
-                playerCheckpointList.add(area.toCuboid());
-            } else if ("start".equals(area.name)) {
+        super(config, "Race Me");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("ai".equals(entry.getKey())) {
+                aiCheckpointList.add(area);
+            } else if ("player".equals(entry.getKey())) {
+                playerCheckpointList.add(area);
+            } else if ("start".equals(entry.getKey())) {
                 if (!Cuboid.ZERO.equals(startArea)) {
                     debugLine("Duplicate area: start");
                 }
-                startArea = area.toCuboid();
+                startArea = area;
             }
         }
-        this.displayName = text("Race Me", RED);
         this.description = text("Race me once around the house?"
                                 + " I bet you can't beat me,"
                                 + " I'm super fast!");
@@ -66,10 +67,13 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     public void onEnable() {
-        final Map<String, Object> raw = getFirstArea().getRaw() != null
-            ? getFirstArea().getRaw()
-            : Map.of();
+        final Map<String, Object> raw = configuration.getSettings();
         if (raw.get("time") instanceof Number number) {
             this.maxRaceTime = Duration.ofSeconds(number.intValue());
         }
@@ -159,7 +163,7 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
             saveTag.playerCheckpointIndex += 1;
             if (saveTag.playerCheckpointIndex >= playerCheckpointList.size()) {
                 victory(player);
-                festival.sessionOf(player).setCooldown(this, completionCooldown);
+                plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                 prepareReward(player, true);
                 return State.IDLE;
             } else {
@@ -243,7 +247,7 @@ public final class RaceAttraction extends Attraction<RaceAttraction.SaveTag> {
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long countdownStarted;
         protected long raceStarted;

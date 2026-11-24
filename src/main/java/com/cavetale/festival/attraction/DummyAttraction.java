@@ -1,31 +1,39 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.font.Unicode;
 import com.cavetale.core.font.VanillaItems;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.entity.Player;
 
-public final class DummyAttraction extends Attraction<DummyAttraction.SaveTag> {
+public final class DummyAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration PLAY_TIME = Duration.ofSeconds(30);
     protected int secondsLeft;
     protected final Set<Vec3i> blocks = new HashSet<>();
 
     protected DummyAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if ("name".equals(area.name)) {
+        super(config, "Dummy Attraction");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("name".equals(entry.getKey())) {
                 blocks.addAll(area.enumerate());
             }
         }
-        this.displayName = booth.format("Dummy Atraction");
         this.description = Component.text("Hello");
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -106,7 +114,7 @@ public final class DummyAttraction extends Attraction<DummyAttraction.SaveTag> {
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long playStarted;
     }

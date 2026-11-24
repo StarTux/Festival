@@ -1,12 +1,12 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.mytems.Mytems;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
@@ -31,18 +31,20 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
 /**
  * Dummy attraction for the purpose of copy and paste.
  */
-public final class GuessNumberAttraction extends Attraction<GuessNumberAttraction.SaveTag> {
+public final class GuessNumberAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration GAME_TIME = Duration.ofSeconds(70);
     protected final int maxAttempts = 7;
     protected long secondsLeft;
 
     protected GuessNumberAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-        }
-        this.displayName = booth.format("Guess the Number");
+        super(config, "Guess the Number");
         this.description = text("I will think of a number between 1 and 100. You may guess 7 times.");
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -104,7 +106,7 @@ public final class GuessNumberAttraction extends Attraction<GuessNumberAttractio
 
     @Override
     public void onCommand(Player player, String[] args) {
-        if (!isCurrentPlayer(player)) return;
+        if (!isParticipant(player)) return;
         if (args.length == 0) {
             openBook(player);
             return;
@@ -130,14 +132,14 @@ public final class GuessNumberAttraction extends Attraction<GuessNumberAttractio
         if (guess < 1 || guess > 100) return;
         if (guess == saveTag.number) {
             perfect(player);
-            player.sendMessage(booth.format("Correct! The number is " + saveTag.number));
+            player.sendMessage(theme.format("Correct! The number is " + saveTag.number));
             prepareReward(player, true);
-            festival.sessionOf(player).setCooldown(this, completionCooldown);
+            plugin.getSessions().of(player).setCooldown(this, completionCooldown);
             changeState(State.IDLE);
             return;
         }
         saveTag.guess = guess;
-        player.sendMessage(booth.format(getGuessMessage()));
+        player.sendMessage(theme.format(getGuessMessage()));
         saveTag.guesses.add(guess);
         saveTag.attempts += 1;
         if (saveTag.attempts >= 7) {
@@ -156,7 +158,7 @@ public final class GuessNumberAttraction extends Attraction<GuessNumberAttractio
                 meta.author(text("Cavetale"));
                 meta.title(text("Festival"));
                 List<Component> lines = new ArrayList<>();
-                lines.add(booth.format(superscript(saveTag.attempts + 1) + "/" + subscript(maxAttempts)
+                lines.add(theme.format(superscript(saveTag.attempts + 1) + "/" + subscript(maxAttempts)
                                        + " " + getGuessMessage()));
                 List<Component> numbers = new ArrayList<>();
                 for (int i = 1; i <= 100; i += 1) {
@@ -204,7 +206,7 @@ public final class GuessNumberAttraction extends Attraction<GuessNumberAttractio
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected int number;

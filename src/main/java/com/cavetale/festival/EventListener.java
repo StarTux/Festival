@@ -36,12 +36,10 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.EntityToggleGlideEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
@@ -64,17 +62,7 @@ public final class EventListener implements Listener {
         for (Attraction attraction : plugin.getAttractionsIn(player.getWorld())) {
             attraction.onPlayerQuit(event);
         }
-        for (Festival festival : plugin.festivalMap.values()) {
-            festival.sessions.clear(player.getUniqueId());
-        }
-    }
-
-    @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
-    private void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-        Player player = event.getPlayer();
-        for (Festival festival : plugin.festivalMap.values()) {
-            festival.sessions.clear(player.getUniqueId());
-        }
+        plugin.getSessions().clear(player.getUniqueId());
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.MONITOR)
@@ -150,30 +138,28 @@ public final class EventListener implements Listener {
 
     @EventHandler
     private void onPlayerOpenMusicalInstrument(PlayerOpenMusicalInstrumentEvent event) {
-        plugin.applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerOpenMusicalInstrument(event));
+        plugin.getAttractions().applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerOpenMusicalInstrument(event));
     }
 
     @EventHandler
     private void onPlayerCloseMusicalInstrument(PlayerCloseMusicalInstrumentEvent event) {
-        plugin.applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerCloseMusicalInstrument(event));
+        plugin.getAttractions().applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerCloseMusicalInstrument(event));
     }
 
     @EventHandler
     private void onPlayerBeat(PlayerBeatEvent event) {
-        plugin.applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerBeat(event));
+        plugin.getAttractions().applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerBeat(event));
     }
 
     @EventHandler
     private void onPlayerMelodyComplete(PlayerMelodyCompleteEvent event) {
-        plugin.applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerMelodyComplete(event));
+        plugin.getAttractions().applyActiveAttraction(MusicHeroAttraction.class, m -> m.onPlayerMelodyComplete(event));
     }
 
     @EventHandler
     private void onMagicMapCursor(MagicMapCursorEvent event) {
-        Festival festival = plugin.getFestival(event.getPlayer().getWorld());
-        if (festival == null) return;
-        Session session = festival.sessionOf(event.getPlayer());
-        for (Attraction attraction : festival.getAttractions()) {
+        Session session = plugin.getSessions().of(event.getPlayer());
+        for (Attraction attraction : plugin.getAttractionsIn(event.getPlayer().getWorld())) {
             if (attraction.isDisabled()) continue;
             Vec3i vec = attraction.getNpcVector();
             if (vec == null) continue;
@@ -188,23 +174,22 @@ public final class EventListener implements Listener {
             } else {
                 cursorType = attraction.getType().getMapCursorIcon();
             }
-            final Component caption = attraction.getBooth().getMapCursorCaption();
+            final Component caption = attraction.getMapCursorCaption();
             event.addCursor(cursorType, vec.toLocation(event.getPlayer().getWorld()), caption);
         }
     }
 
     @EventHandler
     private void onThrownEggHatch(ThrownEggHatchEvent event) {
-        Festival festival = plugin.getFestival(event.getEgg().getWorld());
-        if (festival != null) {
+        if (!plugin.getAttractionsAt(event.getEgg().getLocation()).isEmpty()) {
             event.setHatching(false);
         }
     }
 
     @EventHandler
     private void onPlayerHud(PlayerHudEvent event) {
-        for (Attraction<?> attraction : plugin.getAttractionsAt(event.getPlayer().getLocation())) {
-            if (attraction.isPlaying() && attraction.isCurrentPlayer(event.getPlayer())) {
+        for (Attraction attraction : plugin.getAttractionsAt(event.getPlayer().getLocation())) {
+            if (attraction.isParticipant(event.getPlayer())) {
                 attraction.onPlayerHud(event);
             }
             if (
@@ -222,52 +207,43 @@ public final class EventListener implements Listener {
 
     @EventHandler
     private void onWorldLoad(WorldLoadEvent event) {
-        Festival festival = plugin.getFestival(event.getWorld());
-        if (festival != null) festival.load();
+        plugin.getAttractions().loadWorld(event.getWorld());
     }
 
     @EventHandler
     private void onWorldUnload(WorldUnloadEvent event) {
-        Festival festival = plugin.getFestival(event.getWorld());
-        if (festival != null) festival.unload();
+        plugin.getAttractions().unloadWorld(event.getWorld());
     }
 
     @EventHandler
     private void onPlayerTeleport(PlayerTeleportEvent event) {
-        plugin.applyAttraction(event.getTo(), a -> a.onPlayerTeleport(event));
+        plugin.getAttractions().applyAttraction(event.getTo(), a -> a.onPlayerTeleport(event));
     }
 
     @EventHandler
     private void onEntityToggleGlide(EntityToggleGlideEvent event) {
-        plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityToggleGlide(event));
+        plugin.getAttractions().applyAttraction(event.getEntity().getLocation(), a -> a.onEntityToggleGlide(event));
     }
 
     @EventHandler
     private void onPlayerBlockAbility(PlayerBlockAbilityQuery event) {
-        plugin.applyAttraction(event.getBlock(), a -> a.onPlayerBlockAbility(event));
+        plugin.getAttractions().applyAttraction(event.getBlock(), a -> a.onPlayerBlockAbility(event));
     }
 
     @EventHandler
     private void onEntityPathfind(EntityPathfindEvent event) {
-        plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityPathfind(event));
+        plugin.getAttractions().applyAttraction(event.getEntity().getLocation(), a -> a.onEntityPathfind(event));
     }
 
     @EventHandler
     private void onEntityTarget(EntityTargetEvent event) {
-        plugin.applyAttraction(event.getEntity().getLocation(), a -> a.onEntityTarget(event));
+        plugin.getAttractions().applyAttraction(event.getEntity().getLocation(), a -> a.onEntityTarget(event));
     }
 
-    @EventHandler(priority = EventPriority.LOW)
-    private void onPlayerRespawn(PlayerRespawnEvent event) {
-        Festival festival = plugin.getFestival(event.getPlayer().getWorld());
-        if (festival != null) {
-            event.setRespawnLocation(event.getPlayer().getWorld().getSpawnLocation());
-        }
-    }
 
     @EventHandler(priority = EventPriority.LOW)
     private void onPlayerFish(PlayerFishEvent event) {
-        plugin.applyAttraction(event.getPlayer().getLocation(), a -> {
+        plugin.getAttractions().applyAttraction(event.getPlayer().getLocation(), a -> {
                 if (a instanceof FishAttraction fa) {
                     fa.onPlayerFish(event);
                 }

@@ -5,6 +5,7 @@ import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.Mytems;
 import java.time.Duration;
 import java.util.List;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
@@ -22,7 +23,8 @@ import static net.kyori.adventure.text.format.NamedTextColor.*;
 /**
  * Deliver an item, receive an item.  Items are in the session's collection.
  */
-public final class TradeChainAttraction extends Attraction<TradeChainAttraction.SaveTag> {
+public final class TradeChainAttraction extends Attraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 3);
     protected long secondsLeft;
     @Setter protected String want;
@@ -30,9 +32,18 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
     @Setter protected String dialogue = "";
 
     protected TradeChainAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
+        super(config, "Trade Chain");
         this.stringKeys.add("want");
         this.stringKeys.add("give");
+        this.stringKeys.add("dialogue");
+        if (config.getSettings().get("want") instanceof String value) want = value;
+        if (config.getSettings().get("give") instanceof String value) give = value;
+        if (config.getSettings().get("dialogue") instanceof String value) dialogue = value;
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -46,18 +57,18 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
     public void clickMainVillager(Player player) {
         if (!checkPermission(player)) return;
         if (checkPrizeWaiting(player)) return;
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         final boolean done = session.isUniqueLocked(this);
         if (!done && want == null) {
             boolean has = false;
             player.sendMessage(textOfChildren(Mytems.VILLAGER_FACE,
-                                              booth.format(" Thank you so much for visiting. Take this!")));
+                                              theme.format(" Thank you so much for visiting. Take this!")));
             perfect(player);
             if (give != null) {
                 session.getCollection().add(give);
-                festival.openInventory(player);
+                plugin.showCollection(player);
             }
-            prepareFirstCompletionReward(player); // saves
+            prepareReward(player, true); // saves
             return;
         }
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
@@ -67,8 +78,8 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                 if (done) {
                     page = textOfChildren(Mytems.VILLAGER_FACE,
                                           (want != null
-                                           ? booth.format(" Thank you again for your help! ")
-                                           : booth.format(" Thank you again for visiting me! ")),
+                                           ? theme.format(" Thank you again for your help! ")
+                                           : theme.format(" Thank you again for visiting me! ")),
                                           Mytems.HEART,
                                           newline(), newline(),
                                           (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))
@@ -76,9 +87,9 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                                            .clickEvent(runCommand("/fest inv"))));
                 } else {
                     page = textOfChildren(Mytems.VILLAGER_FACE,
-                                          booth.format(" " + dialogue + " "),
+                                          theme.format(" " + dialogue + " "),
                                           newline(), newline(),
-                                          booth.format("Do you have an item that could help me?"),
+                                          theme.format("Do you have an item that could help me?"),
                                           newline(),
                                           (DefaultFont.YES_BUTTON.component
                                            .clickEvent(runCommand("/fest yes " + name))
@@ -104,7 +115,7 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
     public void onClickYes(Player player) {
         if (want == null) return;
         if (!checkPermission(player)) return;
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         final boolean done = session.isUniqueLocked(this);
         if (done) return;
         if (!session.getCollection().contains(want)) {
@@ -113,7 +124,7 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                     BookMeta meta = (BookMeta) m;
                     final Component page;
                     page = textOfChildren(Mytems.VILLAGER_FACE,
-                                          booth.format(" Looks like you don't have anything that could help me."
+                                          theme.format(" Looks like you don't have anything that could help me."
                                                        + " Thanks for trying anyway. "),
                                           Mytems.SMILE,
                                           newline(), newline(),
@@ -132,7 +143,7 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
         if (give != null) {
             session.getCollection().add(give);
         }
-        prepareFirstCompletionReward(player); // saves
+        prepareReward(player, true); // saves
         perfect(player);
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         book.editMeta(m -> {
@@ -140,8 +151,8 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
                 final Component page;
                 page = textOfChildren(Mytems.VILLAGER_FACE,
                                       (give != null
-                                       ? booth.format(" Thank you so much, this is perfect! Take this instead.")
-                                       : booth.format(" Thank you so much, this is perfect!")),
+                                       ? theme.format(" Thank you so much, this is perfect! Take this instead.")
+                                       : theme.format(" Thank you so much, this is perfect!")),
                                       Mytems.HEART,
                                       newline(), newline(),
                                       (textOfChildren(Mytems.ARROW_RIGHT, text(" View Inventory", BLUE))
@@ -157,6 +168,11 @@ public final class TradeChainAttraction extends Attraction<TradeChainAttraction.
 
     @Override
     public boolean isPlaying() {
+        return false;
+    }
+
+    @Override
+    public boolean isParticipant(final Player player) {
         return false;
     }
 

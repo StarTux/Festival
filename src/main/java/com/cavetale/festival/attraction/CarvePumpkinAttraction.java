@@ -1,9 +1,9 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaItems;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -26,7 +27,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttraction.SaveTag> {
+public final class CarvePumpkinAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected Duration gameTime = Duration.ofSeconds(90);
     protected int maxBlocks = 12;
     protected final Set<Vec3i> blockSet = new HashSet<>();
@@ -34,11 +36,11 @@ public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttract
     protected int ticks;
 
     protected CarvePumpkinAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        this.displayName = booth.format("Pumpkin Carving");
+        super(config, "Pumpkin Carving");
         this.description = text("It's pumpkin season. Let's turn them all into Jack o Lanterns!");
-        for (Area area : allAreas) {
-            if ("pumpkin".equals(area.name)) {
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("pumpkin".equals(entry.getKey())) {
                 blockSet.addAll(area.enumerate());
             }
         }
@@ -51,10 +53,13 @@ public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttract
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     public void onEnable() {
-        final Map<String, Object> raw = getFirstArea().getRaw() != null
-            ? getFirstArea().getRaw()
-            : Map.of();
+        final Map<String, Object> raw = configuration.getSettings();
         if (raw.get("time") instanceof Number number) {
             this.gameTime = Duration.ofSeconds(number.intValue());
         }
@@ -176,7 +181,7 @@ public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttract
             if (saveTag.state == State.LIGHT) {
                 victory(player);
                 prepareReward(player, true);
-                festival.sessionOf(player).setCooldown(this, completionCooldown);
+                plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                 changeState(State.IDLE);
             } else {
                 player.sendActionBar(text("Light all the carved pumpkins", GOLD));
@@ -245,7 +250,7 @@ public final class CarvePumpkinAttraction extends Attraction<CarvePumpkinAttract
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected List<Vec3i> blockList = new ArrayList<>();
         protected List<String> blockDataList = new ArrayList<>();

@@ -40,9 +40,7 @@ public final class FestivalCommand extends AbstractCommand<FestivalPlugin> {
 
     protected boolean inv(Player player, String[] args) {
         if (args.length != 0) return true;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) return true;
-        festival.openInventory(player);
+        plugin.showCollection(player);
         return true;
     }
 

@@ -5,6 +5,7 @@ import com.cavetale.mytems.Mytems;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -17,15 +18,20 @@ import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.JoinConfiguration.noSeparators;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class FishAttraction extends Attraction<FishAttraction.SaveTag> {
+public final class FishAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration PLAY_TIME = Duration.ofSeconds(120);
     protected int secondsLeft;
     private int requiredScore = 3;
 
     protected FishAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        this.displayName = booth.format("Candy Fishing");
+        super(config, "Candy Fishing");
         this.description = text("Can you catch " + requiredScore + " Halloween Candies out of the water in time?");
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -109,7 +115,7 @@ public final class FishAttraction extends Attraction<FishAttraction.SaveTag> {
             if (saveTag.progress >= requiredScore) {
                 victory(player);
                 prepareReward(player, true);
-                festival.sessionOf(player).setCooldown(this, completionCooldown);
+                plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                 changeState(State.IDLE);
             } else {
                 progress(player);
@@ -143,7 +149,7 @@ public final class FishAttraction extends Attraction<FishAttraction.SaveTag> {
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long playStarted;
         protected int progress;

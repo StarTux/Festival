@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.connect.NetworkServer;
 import com.cavetale.core.event.block.PlayerBlockAbilityQuery;
 import com.cavetale.core.event.hud.PlayerHudEvent;
@@ -13,9 +12,9 @@ import com.cavetale.core.item.ItemKinds;
 import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.core.util.Json;
-import com.cavetale.festival.Festival;
 import com.cavetale.festival.FestivalPlugin;
-import com.cavetale.festival.booth.Booth;
+import com.cavetale.festival.event.AttractionCompleteEvent;
+import com.cavetale.festival.FestivalTheme;
 import com.cavetale.festival.gui.Gui;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.Mytems;
@@ -27,12 +26,11 @@ import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.ComponentLike;
@@ -63,7 +61,6 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
-import static com.cavetale.festival.FestivalPlugin.plugin;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
 import static net.kyori.adventure.text.Component.newline;
@@ -75,75 +72,62 @@ import static net.kyori.adventure.text.format.TextColor.color;
 
 /**
  * Base class for all attractions.
- * @param <T> the save tag class
  */
 @Getter
-public abstract class Attraction<T extends Attraction.SaveTag> {
+public abstract class Attraction {
     protected final FestivalPlugin plugin;
-    protected final Festival festival;
+    protected final AttractionConfiguration configuration;
     protected final AttractionType type;
     protected final World world;
     protected final String name;
-    protected final List<Area> allAreas;
     protected final File saveFile;
     protected final Cuboid mainArea;
-    protected final Class<T> saveTagClass;
     protected PluginSpawn mainVillager;
     protected final Random random = ThreadLocalRandom.current();
-    protected T saveTag;
-    protected Supplier<T> saveTagSupplier;
     protected Vec3i npcVector;
     protected boolean doesRequireInstrument;
-    protected Duration completionCooldown = Duration.ofMinutes(10);
-    protected Component displayName = empty();
-    protected Component description = empty();
-    protected final Booth booth;
+    @Setter protected Duration completionCooldown = Duration.ofMinutes(10);
+    protected final FestivalTheme theme;
+    private final String defaultDisplayName;
+    @Setter protected Component displayName;
+    @Setter protected Component description = empty();
+    @Setter protected ItemStack firstCompletionReward = new ItemStack(Material.DIAMOND);
+    @Setter protected List<List<ItemStack>> prizePool = List.of(List.of(new ItemStack(Material.DIAMOND)));
+    @Setter protected List<ItemStack> bonusPrizePool = List.of(new ItemStack(Material.DIAMOND));
+    @Setter protected ItemStack entryFee = Mytems.RUBY.createItemStack();
+    @Setter protected Component mapCursorCaption;
     protected final List<Component> debugLines = new ArrayList<>();
     protected final List<String> areaNames = new ArrayList<>();
     protected final List<String> stringKeys = new ArrayList<>();
     protected final List<String> intKeys = new ArrayList<>();
     @Setter protected boolean disabled = false;
 
-    public static Attraction of(final Festival festival,
-                                @NonNull final String name,
-                                @NonNull final List<Area> areaList,
-                                @NonNull final Booth booth) {
-        if (areaList.isEmpty()) throw new IllegalArgumentException(name + ": area list is empty");
-        if (areaList.get(0).name == null) {
-            return null;
-        }
-        String typeName = areaList.get(0).name;
-        AttractionType attractionType = booth.getType() != null
-            ? booth.getType()
-            : AttractionType.forName(typeName);
-        if (attractionType == null) return null;
-        Attraction result = attractionType.make(new AttractionConfiguration(festival, attractionType, name, areaList, booth));
-        return result;
+    protected Attraction(final AttractionConfiguration config) {
+        this(config, config.getName());
     }
 
-    protected Attraction(final AttractionConfiguration config, final Class<T> saveTagClass, final Supplier<T> saveTagSupplier) {
-        this.plugin = plugin();
-        this.festival = config.festival;
-        this.type = config.type;
-        this.world = festival.getWorld();
-        this.name = config.name;
-        this.allAreas = config.areaList;
-        this.saveFile = new File(festival.getSaveFolder(), name + ".json");
-        this.mainArea = allAreas.get(0).toCuboid();
-        this.saveTagClass = saveTagClass;
-        this.saveTagSupplier = saveTagSupplier;
-        for (Area area : allAreas) {
-            if ("npc".equals(area.name)) {
+    protected Attraction(final AttractionConfiguration config, final String defaultDisplayName) {
+        this.plugin = FestivalPlugin.getInstance();
+        this.theme = config.resolveTheme(this::debugLine);
+        this.defaultDisplayName = defaultDisplayName;
+        this.configuration = config;
+        this.type = config.getType();
+        this.world = Bukkit.getWorld(config.getWorld());
+        this.name = config.getName();
+        this.saveFile = new File(plugin.getStateFolder(), name + ".json");
+        this.mainArea = config.getMain();
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("npc".equals(entry.getKey())) {
                 if (area.getVolume() != 1) {
                     debugLine("NPC vector bigger than 1");
                 }
                 if (npcVector != null) {
                     debugLine("Duplicate area: NPC");
                 }
-                npcVector = area.min;
+                npcVector = area.getMin();
             }
         }
-        this.booth = config.booth;
         this.areaNames.add("npc");
         this.stringKeys.add("description");
     }
@@ -153,11 +137,11 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     public final void logWarn(String msg) {
-        festival.logWarn("[" + name + "] " + msg);
+        plugin.getLogger().warning("[" + name + "] " + msg);
     }
 
     public final void logInfo(String msg) {
-        festival.logInfo("[" + name + "] " + msg);
+        plugin.getLogger().info("[" + name + "] " + msg);
     }
 
     public final boolean isInArea(Location location) {
@@ -168,31 +152,31 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         return mainArea.contains(vector);
     }
 
+    protected abstract void loadSaveTag();
+
+    public abstract SaveTag getSaveTag();
+
+    protected final <T extends SaveTag> T readSaveTag(final Class<T> type, final Supplier<T> fallback) {
+        return Json.load(saveFile, type, fallback);
+    }
+
     public final void load() {
-        saveTag = Json.load(saveFile, saveTagClass, saveTagSupplier);
+        loadSaveTag();
         onLoad();
     }
 
     public final void save() {
         onSave();
+        final SaveTag saveTag = getSaveTag();
         if (saveTag != null) {
             Json.save(saveFile, saveTag, true);
         }
     }
 
     public final void enable() {
-        Area area = getFirstArea();
-        if (area.getRaw() != null) {
-            if (area.getRaw().get("description") instanceof String desc) {
-                this.description = text(desc);
-            }
-        }
-        try {
-            booth.onEnable(this);
-        } catch (Exception e) {
-            logWarn("Exception " + e.getMessage());
-            e.printStackTrace();
-            disabled = true;
+        if (displayName == null) displayName = theme.format(defaultDisplayName);
+        if (configuration.getSettings().get("description") instanceof String desc) {
+            this.description = text(desc);
         }
         if (disabled) return;
         onEnable();
@@ -200,7 +184,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             debugLine("Area missing: NPC");
         } else {
             Location location = npcVector.toCenterFloorLocation(world);
-            mainVillager = PluginSpawn.register(plugin, festival.getTheme().getZoneType(), Loc.of(location));
+            mainVillager = PluginSpawn.register(plugin, theme.getZoneType(), Loc.of(location));
             mainVillager.setOnPlayerClick(this::clickMainVillager);
             mainVillager.setOnMobSpawning(mob -> {
                     mob.setCollidable(false);
@@ -214,7 +198,6 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             mainVillager = null;
         }
         onDisable();
-        booth.onDisable(this);
     }
 
     public final void tick() {
@@ -228,22 +211,22 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected final void timeout(Player player) {
         player.showTitle(Title.title(text("Timeout", DARK_RED),
                                      text("Try Again", DARK_RED)));
-        booth.getFailMelody().play(plugin, player);
-        festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
+        theme.getFailMelody().play(plugin, player);
+        plugin.getSessions().of(player).setCooldown(this, Duration.ofSeconds(10));
     }
 
     protected final void fail(Player player) {
         player.showTitle(Title.title(text("Wrong", DARK_RED),
                                      text("Try Again", DARK_RED)));
-        booth.getFailMelody().play(plugin, player);
-        festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
+        theme.getFailMelody().play(plugin, player);
+        plugin.getSessions().of(player).setCooldown(this, Duration.ofSeconds(10));
     }
 
     protected final void fail(Player player, String msg) {
         player.showTitle(Title.title(empty(), text(msg, DARK_RED)));
         player.sendMessage(text(msg, RED));
-        booth.getFailMelody().play(plugin, player);
-        festival.sessionOf(player).setCooldown(this, Duration.ofSeconds(10));
+        theme.getFailMelody().play(plugin, player);
+        plugin.getSessions().of(player).setCooldown(this, Duration.ofSeconds(10));
     }
 
     protected final void progress(Player player) {
@@ -251,18 +234,18 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void victory(Player player) {
-        Component message = booth.format("Complete");
-        player.showTitle(Title.title(message, booth.format("Good Job!")));
+        Component message = theme.format("Complete");
+        player.showTitle(Title.title(message, theme.format("Good Job!")));
         player.sendMessage(message);
-        booth.getSuccessMelody().play(FestivalPlugin.getInstance(), player);
+        theme.getSuccessMelody().play(plugin, player);
     }
 
     protected final void perfect(Player player, boolean withMusic) {
-        Component message = booth.format("PERFECT!");
+        Component message = theme.format("PERFECT!");
         player.showTitle(Title.title(message, empty()));
         player.sendMessage(message);
         if (withMusic) {
-            booth.getSuccessMelody().play(FestivalPlugin.getInstance(), player);
+            theme.getSuccessMelody().play(plugin, player);
         }
     }
 
@@ -271,7 +254,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final void countdown(Player player, int seconds) {
-        player.sendActionBar(booth.format("" + seconds));
+        player.sendActionBar(theme.format("" + seconds));
         List<Note.Tone> tones = List.of(Note.Tone.D, Note.Tone.A, Note.Tone.G);
         if ((int) seconds <= tones.size()) {
             player.playNote(player.getLocation(), Instrument.PLING, Note.natural(0, tones.get((int) seconds - 1)));
@@ -280,12 +263,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     protected final Component makeProgressComponent(int seconds, ComponentLike prefix, int has, int max) {
         return join(noSeparators(),
-                    booth.format(Unicode.WATCH.string + seconds),
-                    space(), prefix, booth.format(has + "/" + max));
+                    theme.format(Unicode.WATCH.string + seconds),
+                    space(), prefix, theme.format(has + "/" + max));
     }
 
     protected final Component makeProgressComponent(int seconds) {
-        return booth.format(Unicode.WATCH.string + seconds);
+        return theme.format(Unicode.WATCH.string + seconds);
     }
 
     /**
@@ -293,24 +276,8 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
      */
     public abstract boolean isPlaying();
 
-    public final Player getCurrentPlayer() {
-        if (saveTag.currentPlayer == null || !isPlaying()) {
-            return null;
-        }
-        Player player = Bukkit.getPlayer(saveTag.currentPlayer);
-        if (player == null) return null;
-        if (!isInArea(player.getLocation())) {
-            fail(player, "You left the game area");
-            festival.sessionOf(player).setCooldown(this, Duration.ofMinutes(1));
-            stop();
-            return null;
-        }
-        return player;
-    }
-
-    public final boolean isCurrentPlayer(Player player) {
-        return isPlaying() && player.getUniqueId().equals(saveTag.currentPlayer);
-    }
+    /** Whether the player is participating in an active game at this attraction. */
+    public abstract boolean isParticipant(Player player);
 
     protected abstract void onTick();
 
@@ -344,15 +311,10 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     public void onEntityTarget(EntityTargetEvent event) { }
 
-    public final void onPlayerQuit(PlayerQuitEvent event) {
-        if (isPlaying() && event.getPlayer().equals(getCurrentPlayer())) {
-            festival.sessionOf(event.getPlayer()).setCooldown(this, Duration.ofMinutes(1));
-            stop();
-        }
-    }
+    public void onPlayerQuit(final PlayerQuitEvent event) { }
 
     protected final ItemStack getRegularCompletionReward(Player player) {
-        List<List<ItemStack>> list = booth.getPrizePool();
+        List<List<ItemStack>> list = getPrizePool();
         List<ItemStack> list2 = list.get(random.nextInt(list.size()));
         ItemStack item = list2.get(random.nextInt(list2.size()));
         return item.clone();
@@ -362,80 +324,65 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
      * Give unique prize in a chest and update the session.
      */
     protected final void giveFirstCompletionReward(Player player) {
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         session.clearPrizeWaiting(this);
         session.lockUnique(this);
         session.save();
-        List<ItemStack> bonus = booth.getBonusPrizePool();
-        giveInGui(player, booth.getFirstCompletionReward().clone(),
+        List<ItemStack> bonus = getBonusPrizePool();
+        giveInGui(player, getFirstCompletionReward().clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone());
-        booth.onFirstCompletion(this, player);
     }
 
     /**
      * Give regular prize in a chest and update the session.
      */
     protected final void giveRegularCompletionReward(Player player) {
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         session.clearPrizeWaiting(this);
         session.save();
-        List<ItemStack> bonus = booth.getBonusPrizePool();
+        List<ItemStack> bonus = getBonusPrizePool();
         giveInGui(player, getRegularCompletionReward(player),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone(),
                   bonus.get(random.nextInt(bonus.size())).clone());
-        booth.onRegularCompletion(this, player);
     }
 
-    /**
-     * Prepare unique prize for when they next click the NPC.
-     * Also update the session.
-     */
-    protected final void prepareFirstCompletionReward(Player player) {
-        Session session = festival.sessionOf(player);
-        session.setFirstCompletionPrizeWaiting(this);
-        session.lockUnique(this);
-        session.save();
+    protected final void giveReward(final Player player, final boolean appliesForFirstCompletion) {
+        complete(player, appliesForFirstCompletion, true);
     }
 
-    /**
-     * Prepare regular prize for when they next click the NPC.
-     * Also update the session.
-     */
-    protected final void prepareRegularCompletionReward(Player player) {
-        Session session = festival.sessionOf(player);
-        session.setRegularCompletionPrizeWaiting(this);
-        session.save();
+    protected final void prepareReward(final Player player, final boolean appliesForFirstCompletion) {
+        complete(player, appliesForFirstCompletion, false);
     }
 
-    /**
-     * Give the appropriate reward and update the session.
-     */
-    protected final void giveReward(Player player, boolean appliesForFirstCompletion) {
-        Session session = festival.sessionOf(player);
+    private void complete(final Player player, final boolean appliesForFirstCompletion, final boolean giveImmediately) {
+        final Session session = plugin.getSessions().of(player);
+        final boolean uniqueLocked = session.isUniqueLocked(this);
+        // Older sessions can have a unique reward recorded without a completion count.
+        final boolean firstCompletion = session.getCompletionCount(this) == 0 && !uniqueLocked
+            && session.getPrizeWaiting(this) == 0;
+        final boolean firstReward = appliesForFirstCompletion && !uniqueLocked;
         session.addCompletion(this);
-        if (appliesForFirstCompletion && !session.isUniqueLocked(this)) {
-            giveFirstCompletionReward(player);
+        if (giveImmediately) {
+            if (firstReward) {
+                giveFirstCompletionReward(player);
+            } else {
+                giveRegularCompletionReward(player);
+            }
         } else {
-            giveRegularCompletionReward(player);
+            if (firstReward) {
+                session.setFirstCompletionPrizeWaiting(this);
+                session.lockUnique(this);
+            } else {
+                session.setRegularCompletionPrizeWaiting(this);
+            }
+            session.save();
         }
-    }
-
-    /**
-     * Prepare the appropriate reward for when they next click the
-     * NPC, and update the session.
-     */
-    protected final void prepareReward(Player player, boolean appliesForFirstCompletion) {
-        Session session = festival.sessionOf(player);
-        if (appliesForFirstCompletion && !session.isUniqueLocked(this)) {
-            prepareFirstCompletionReward(player);
-        } else {
-            prepareRegularCompletionReward(player);
-        }
+        new AttractionCompleteEvent(player, this, firstCompletion, firstReward).callEvent();
     }
 
     protected final void giveInGui(Player player, ItemStack prize, ItemStack... extras) {
@@ -465,7 +412,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     protected final boolean checkCooldown(Player player) {
         if (player.hasPermission("festival.nocooldown")) return true;
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         Duration cooldown = session.getCooldown(this);
         if (cooldown != null) {
             long minutes = cooldown.toMinutes();
@@ -480,21 +427,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         return true;
     }
 
-    protected final boolean checkSomebodyPlaying(Player player) {
-        if (!isPlaying()) return true;
-        Player somebody = getCurrentPlayer();
-        if (player.equals(somebody)) return false; // fail silently
-        Component somebodyName = somebody != null
-            ? somebody.displayName()
-            : text("Somebody");
-        Component message = join(noSeparators(),
-                                 text("Please wait: "),
-                                 somebodyName,
-                                 text(" is playing this right now"))
-            .color(RED);
-        player.sendMessage(message);
-        player.sendActionBar(message);
-        return false;
+    /** Checked when offering entry and again before charging the player. */
+    protected boolean canJoin(final Player player) {
+        return !isParticipant(player);
     }
 
     protected final boolean checkInstrument(Player player) {
@@ -515,7 +450,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final boolean takeEntryFee(Player player) {
-        ItemStack entryFee = booth.getEntryFee();
+        ItemStack entryFee = getEntryFee();
         for (ItemStack itemStack : player.getInventory()) {
             if (entryFee.isSimilar(itemStack)) {
                 itemStack.subtract(1);
@@ -524,7 +459,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
         }
         Component message = join(noSeparators(),
                                  text("You don't have "),
-                                 ItemKinds.chatDescription(booth.getEntryFee()),
+                                 ItemKinds.chatDescription(getEntryFee()),
                                  text("!"))
             .color(RED);
         player.sendMessage(message);
@@ -533,7 +468,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     /**
-     * Override me when a player starts the game!
+     * Admit the player after the entry checks. An attraction can start a run or join an existing one.
      */
     protected abstract void start(Player player);
 
@@ -545,9 +480,9 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     protected void clickMainVillager(Player player) {
         if (!checkPermission(player)) return;
         if (checkPrizeWaiting(player)) return;
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         if (!checkCooldown(player)) return;
-        if (!checkSomebodyPlaying(player)) return;
+        if (!canJoin(player)) return;
         ItemStack book = new ItemStack(Material.WRITTEN_BOOK);
         book.editMeta(m -> {
                 BookMeta meta = (BookMeta) m;
@@ -569,7 +504,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
                                       newline(),
                                       text("Play game for "),
                                       newline(),
-                                      DefaultFont.bookmarked(color(0x888888), ItemKinds.chatDescription(booth.getEntryFee())),
+                                      DefaultFont.bookmarked(color(0x888888), ItemKinds.chatDescription(getEntryFee())),
                                       text("?"),
                                       newline(),
                                       (DefaultFont.START_BUTTON.component
@@ -600,7 +535,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
     }
 
     protected final boolean checkPrizeWaiting(Player player) {
-        Session session = festival.sessionOf(player);
+        Session session = plugin.getSessions().of(player);
         int prizeWaiting = session.getPrizeWaiting(this);
         if (prizeWaiting > 0) {
             session.clearPrizeWaiting(this);
@@ -627,7 +562,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
             return;
         }
         if (!checkCooldown(player)) return;
-        if (!checkSomebodyPlaying(player)) return;
+        if (!canJoin(player)) return;
         if (doesRequireInstrument && !checkInstrument(player)) return;
         if (!takeEntryFee(player)) return;
         if (creative) {
@@ -638,9 +573,7 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
 
     public void onPluginPlayer(PluginPlayerEvent event) { }
 
-    protected abstract static class SaveTag {
-        protected UUID currentPlayer = null;
-    }
+    protected abstract static class SaveTag { }
 
     protected final void subtitle(Player player, Component component) {
         player.showTitle(Title.title(empty(), component));
@@ -680,15 +613,12 @@ public abstract class Attraction<T extends Attraction.SaveTag> {
      */
     public void onPlayerHud(PlayerHudEvent event) { }
 
-    public final Area getFirstArea() {
-        return allAreas.get(0);
-    }
 
     /**
      * Command via /fest send <attraction> <args...>
      * The <attraction> argument has already been omitted, so we
      * receive only the extraneous args.  The player has yet to be
-     * verified to be the current player.
+     * verified as a participant.
      */
     public void onCommand(Player player, String[] args) { }
 }

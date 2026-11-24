@@ -1,8 +1,8 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.mytems.Mytems;
 import java.time.Duration;
@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
@@ -32,7 +34,8 @@ import org.bukkit.metadata.FixedMetadataValue;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class FindSpidersAttraction extends Attraction<FindSpidersAttraction.SaveTag> {
+public final class FindSpidersAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     @Setter protected Duration searchTime = Duration.ofSeconds(40);
     protected static final int MAX_SPIDERS = 10;
     protected final Set<Vec3i> possibleSpiderBlocks;
@@ -40,15 +43,15 @@ public final class FindSpidersAttraction extends Attraction<FindSpidersAttractio
     protected int secondsLeft;
 
     protected FindSpidersAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
+        super(config, "Spider Hunt");
         Set<Vec3i> spiderSet = new HashSet<>();
-        for (Area area : allAreas) {
-            if ("spider".equals(area.name)) {
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("spider".equals(entry.getKey())) {
                 spiderSet.addAll(area.enumerate());
             }
         }
         this.possibleSpiderBlocks = Set.copyOf(spiderSet);
-        this.displayName = text("Spider Hunt", DARK_RED);
         this.description = text("My place is lousy with spiders."
                                 + " They come out one by one and I can't sleep because they are noisy!"
                                 + " Please find them all.");
@@ -56,6 +59,11 @@ public final class FindSpidersAttraction extends Attraction<FindSpidersAttractio
         if (this.possibleSpiderBlocks.isEmpty()) {
             debugLine("No spider blocks");
         }
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -145,7 +153,7 @@ public final class FindSpidersAttraction extends Attraction<FindSpidersAttractio
         if (saveTag.spiderBlockIndex >= saveTag.spiderBlocks.size()) {
             victory(player);
             prepareReward(player, true);
-            festival.sessionOf(player).setCooldown(this, completionCooldown);
+            plugin.getSessions().of(player).setCooldown(this, completionCooldown);
             changeState(State.IDLE);
         } else {
             progress(player);
@@ -253,7 +261,7 @@ public final class FindSpidersAttraction extends Attraction<FindSpidersAttractio
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected List<Vec3i> spiderBlocks;
         protected int spiderBlockIndex;

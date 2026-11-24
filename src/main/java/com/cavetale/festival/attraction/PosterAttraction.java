@@ -1,8 +1,8 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.poster.PosterPlugin;
 import com.cavetale.poster.save.Poster;
@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -24,8 +25,9 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import static net.kyori.adventure.text.Component.text;
 
-public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag> {
-    private Poster poster; // set by booth!
+public final class PosterAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
+    private Poster poster;
     private Vec3i posterBlock;
     private Vec3i posterFace;
     private BlockFace face;
@@ -35,25 +37,24 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
     private long secondsLeft;
 
     protected PosterAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        this.displayName = booth.format("Picture Puzzle");
+        super(config, "Picture Puzzle");
         this.description = text("Can you unscramble my painting?");
         Vec3i posterX = null;
         Vec3i posterY = null;
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-            switch (area.name) {
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            switch (entry.getKey()) {
             case "block":
-                posterBlock = area.min;
+                posterBlock = area.getMin();
                 break;
             case "face":
-                posterFace = area.min;
+                posterFace = area.getMin();
                 break;
             case "px":
-                posterX = area.min;
+                posterX = area.getMin();
                 break;
             case "py":
-                posterY = area.min;
+                posterY = area.getMin();
                 break;
             default:
                 break;
@@ -77,10 +78,13 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     protected void onEnable() {
-        Map<String, Object> raw = getFirstArea().getRaw() != null
-            ? getFirstArea().getRaw()
-            : Map.of();
+        final Map<String, Object> raw = configuration.getSettings();
         if (raw.get("time") instanceof Number number) {
             this.playTime = Duration.ofSeconds(number.intValue());
         }
@@ -334,7 +338,7 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
         perfect(player, false);
         prepareReward(player, true);
         changeState(State.WIN);
-        festival.sessionOf(player).setCooldown(this, completionCooldown);
+        plugin.getSessions().of(player).setCooldown(this, completionCooldown);
     }
 
     enum State {
@@ -377,7 +381,7 @@ public final class PosterAttraction extends Attraction<PosterAttraction.SaveTag>
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected List<Frame> frames;
         protected long playStarted;

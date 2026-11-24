@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaItems;
@@ -16,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Bukkit;
@@ -33,7 +33,8 @@ import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 import static net.kyori.adventure.text.format.TextDecoration.*;
 
-public final class ShootTargetAttraction extends Attraction<ShootTargetAttraction.SaveTag> {
+public final class ShootTargetAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration SHOOT_TIME = Duration.ofSeconds(30);
     protected static final Duration WARMUP_TIME = Duration.ofSeconds(3);
     protected static final int MAX_ROUNDS = 10;
@@ -49,17 +50,18 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
     private final Map<UUID, Vec3i> targetGhastMap = new HashMap<>();
 
     protected ShootTargetAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
+        super(config, "Bull's Eye!");
         List<Cuboid> list = new ArrayList<>();
         List<Cuboid> ghastList = new ArrayList<>();
         Set<Vec3i> set = new HashSet<>();
         Set<Vec3i> ghastSet = new HashSet<>();
-        for (Area area : allAreas) {
-            if ("target".equals(area.name)) {
-                list.add(area.toCuboid());
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("target".equals(entry.getKey())) {
+                list.add(area);
                 set.addAll(area.enumerate());
-            } else if ("ghast".equals(area.name)) {
-                ghastList.add(area.toCuboid());
+            } else if ("ghast".equals(entry.getKey())) {
+                ghastList.add(area);
                 ghastSet.addAll(area.enumerate());
             }
         }
@@ -67,12 +69,16 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
         this.targetBlocks = Set.copyOf(set);
         this.ghastAreas = List.copyOf(ghastList);
         this.ghastBlocks = Set.copyOf(ghastSet);
-        this.displayName = booth.format("Bull's Eye!");
         this.description = text("Shoot all the target blocks and ghasts as they appear!");
         this.areaNames.add("target");
         this.areaNames.add("ghast");
         if (targetBlocks.isEmpty()) debugLine("No target blocks");
         if (ghastBlocks.isEmpty()) debugLines.add(text("(No ghast blocks)", YELLOW));
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -285,7 +291,7 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
             return State.IDLE;
         }
         if (saveTag.currentRound >= MAX_ROUNDS - 1) {
-            Session session = festival.sessionOf(player);
+            Session session = plugin.getSessions().of(player);
             if (perfectRound) {
                 perfect(player);
                 prepareReward(player, true);
@@ -357,7 +363,7 @@ public final class ShootTargetAttraction extends Attraction<ShootTargetAttractio
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected List<Vec3i> targetBlocks = new ArrayList<>();
         protected List<Vec3i> targetGhasts = new ArrayList<>();

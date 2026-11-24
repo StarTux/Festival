@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaEffects;
@@ -16,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
@@ -44,7 +44,8 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
 import static net.kyori.adventure.title.Title.Times.times;
 import static net.kyori.adventure.title.Title.title;
 
-public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTag> {
+public final class ArcheryAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration GAME_TIME = Duration.ofSeconds(90);
     protected final Map<TargetMob, List<Vec3i>> targetMobs = new EnumMap<>(TargetMob.class);
     protected long secondsLeft;
@@ -98,18 +99,18 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
     }
 
     protected ArcheryAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
+        super(config, "Archery");
         for (TargetMob targetMob : TargetMob.values()) targetMobs.put(targetMob, new ArrayList<>());
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-            TargetMob targetMob = TargetMob.of(area.name);
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            TargetMob targetMob = TargetMob.of(entry.getKey());
             if (targetMob != null) {
                 targetMobs.get(targetMob).add(area.getMin());
                 continue;
             }
-            switch (area.name) {
+            switch (entry.getKey()) {
             case "forbidden":
-                forbiddenZones.add(area.toCuboid());
+                forbiddenZones.add(area);
                 break;
             case "respawn":
                 respawnVector = area.getMin();
@@ -117,7 +118,6 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
             default: break;
             }
         }
-        this.displayName = booth.format("Archery");
         this.description = text("Shoot the moving targets, but avoid ones carrying kittens.");
         for (TargetMob targetMob : TargetMob.values()) {
             this.areaNames.add(targetMob.key);
@@ -132,6 +132,11 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         }
         if (forbiddenZones.isEmpty()) debugLine("no forbidden areas");
         if (Vec3i.ZERO.equals(respawnVector)) debugLine("no respawn area");
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -206,7 +211,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         targetMobData.uuids.remove(uuid);
         if (hasPassengers) {
             player.sendActionBar(text("Do not hit targets carrying kittens", DARK_RED));
-            booth.getFailMelody().play(plugin, player);
+            theme.getFailMelody().play(plugin, player);
             saveTag.missed += 1;
         } else {
             confetti(hitEntity.getLocation());
@@ -237,7 +242,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         final long then = saveTag.gameStarted + GAME_TIME.toMillis();
         secondsLeft = Math.max(0, (then - now - 1) / 1000L + 1L);
         if (secondsLeft <= 0L) {
-            Session session = festival.sessionOf(player);
+            Session session = plugin.getSessions().of(player);
             boolean perfectRound = saveTag.missed == 0;
             if (perfectRound) {
                 perfect(player);
@@ -390,7 +395,7 @@ public final class ArcheryAttraction extends Attraction<ArcheryAttraction.SaveTa
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected int score;

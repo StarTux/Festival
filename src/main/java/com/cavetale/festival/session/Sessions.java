@@ -1,7 +1,7 @@
 package com.cavetale.festival.session;
 
 import com.cavetale.core.playercache.PlayerCache;
-import com.cavetale.festival.Festival;
+import com.cavetale.festival.FestivalPlugin;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 @RequiredArgsConstructor
 public final class Sessions {
-    protected final Festival festival;
+    protected final FestivalPlugin plugin;
     protected final Map<UUID, Session> sessionsMap = new HashMap<>();
 
     public void clear() {
@@ -27,7 +27,7 @@ public final class Sessions {
 
     public Session of(Player player) {
         return sessionsMap.computeIfAbsent(player.getUniqueId(), u -> {
-                Session newSession = new Session(festival, player.getUniqueId(), player.getName());
+                Session newSession = new Session(plugin, player.getUniqueId(), player.getName());
                 newSession.load();
                 return newSession;
             });
@@ -35,7 +35,7 @@ public final class Sessions {
 
     public Session of(PlayerCache player) {
         return sessionsMap.computeIfAbsent(player.uuid, u -> {
-                Session newSession = new Session(festival, player.uuid, player.name);
+                Session newSession = new Session(plugin, player.uuid, player.name);
                 newSession.load();
                 return newSession;
             });

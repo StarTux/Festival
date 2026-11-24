@@ -2,7 +2,7 @@ package com.cavetale.festival.session;
 
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.core.util.Json;
-import com.cavetale.festival.Festival;
+import com.cavetale.festival.FestivalPlugin;
 import com.cavetale.festival.attraction.Attraction;
 import java.io.File;
 import java.time.Duration;
@@ -17,21 +17,21 @@ import lombok.Data;
 import lombok.Getter;
 
 /**
- * Player save file per festival.
+ * Player save file for all attractions.
  */
 @Getter
 public final class Session {
-    protected final Festival festival;
+    protected final FestivalPlugin plugin;
     protected final UUID uuid;
     protected final String name;
     protected final File saveFile;
     protected Tag tag;
 
-    protected Session(final Festival festival, final UUID uuid, final String name) {
-        this.festival = festival;
+    protected Session(final FestivalPlugin plugin, final UUID uuid, final String name) {
+        this.plugin = plugin;
         this.uuid = uuid;
         this.name = name;
-        this.saveFile = new File(festival.getPlayersFolder(), uuid + ".json");
+        this.saveFile = new File(plugin.getPlayersFolder(), uuid + ".json");
     }
 
     protected void load() {
@@ -42,14 +42,14 @@ public final class Session {
         Json.save(saveFile, tag, true);
     }
 
-    public static List<Session> loadAll(Festival festival) {
+    public static List<Session> loadAll(FestivalPlugin plugin) {
         List<Session> result = new ArrayList<>();
-        for (File file : festival.getPlayersFolder().listFiles()) {
+        for (File file : plugin.getPlayersFolder().listFiles()) {
             String name = file.getName();
             if (!file.getName().endsWith(".json")) continue;
             name = name.substring(0, name.length() - 5);
             UUID uuid = UUID.fromString(name);
-            Session session = new Session(festival, uuid, PlayerCache.nameForUuid(uuid));
+            Session session = new Session(plugin, uuid, PlayerCache.nameForUuid(uuid));
             session.load();
             result.add(session);
         }

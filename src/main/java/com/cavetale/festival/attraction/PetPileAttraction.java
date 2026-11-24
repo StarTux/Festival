@@ -1,8 +1,8 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.destroystokyo.paper.entity.ai.GoalType;
 import io.papermc.paper.registry.RegistryKey;
@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -35,7 +36,8 @@ import static com.cavetale.core.util.CamelCase.snakeToCamelCase;
 import static io.papermc.paper.registry.RegistryAccess.registryAccess;
 import static net.kyori.adventure.text.Component.text;
 
-public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTag> {
+public final class PetPileAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     private int realPetCount = 7;
     private int fakePetCount = 21;
     protected final Set<Vec3i> petBlocks = new HashSet<>();
@@ -45,14 +47,14 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
     protected int secondsLeft;
 
     protected PetPileAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        this.displayName = booth.format("Pet Pile");
+        super(config, "Pet Pile");
         this.description = text("Can you help me sort out my pets?");
-        for (Area area : allAreas) {
-            if ("pet".equals(area.name)) {
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("pet".equals(entry.getKey())) {
                 petBlocks.addAll(area.enumerate());
-            } else if ("show".equals(area.name)) {
-                showBlock = area.min;
+            } else if ("show".equals(entry.getKey())) {
+                showBlock = area.getMin();
             }
         }
         this.areaNames.add("pet");
@@ -66,10 +68,13 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     public void onEnable() {
-        Map<String, Object> raw = getFirstArea().getRaw() != null
-            ? getFirstArea().getRaw()
-            : Map.of();
+        final Map<String, Object> raw = configuration.getSettings();
         if (raw.get("realPetCount") instanceof Number number) {
             this.realPetCount = number.intValue();
         }
@@ -259,11 +264,11 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
             if (saveTag.petsFound >= saveTag.totalRealPets) {
                 prepareReward(player, true);
                 perfect(player, true);
-                festival.sessionOf(player).setCooldown(this, completionCooldown);
+                plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                 stop();
             }
         } else {
-            player.sendActionBar(booth.format("You picked the wrong pet!"));
+            player.sendActionBar(theme.format("You picked the wrong pet!"));
             fail(player);
             stop();
         }
@@ -295,7 +300,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long playStarted;
         protected Map<UUID, Boolean> pets;
@@ -339,7 +344,7 @@ public final class PetPileAttraction extends Attraction<PetPileAttraction.SaveTa
                         cat.setSilent(true);
                         cat.getAttribute(Attribute.MOVEMENT_SPEED).setBaseValue(0.0);
                         cat.setCollidable(false);
-                        cat.customName(booth.format(realName()));
+                        cat.customName(theme.format(realName()));
                     }
                     Bukkit.getMobGoals().removeAllGoals(cat);
                 });

@@ -1,9 +1,9 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaItems;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.util.Entities;
@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -32,7 +34,8 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
 import static net.kyori.adventure.title.Title.Times.times;
 import static net.kyori.adventure.title.Title.title;
 
-public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttraction.SaveTag> {
+public final class ShootSnowmenAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected Duration gameTime = Duration.ofSeconds(60 * 2);
     protected final Set<Vec3i> snowmanBlocks = new HashSet<>();
     protected long secondsLeft;
@@ -40,17 +43,16 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
     protected int mobsPerWave = 9;
 
     protected ShootSnowmenAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-            switch (area.name) {
+        super(config, "Snow Golem Attack");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            switch (entry.getKey()) {
             case "snowman":
                 snowmanBlocks.addAll(area.enumerate());
                 break;
             default: break;
             }
         }
-        this.displayName = booth.format("Snow Golem Attack");
         this.description = text("Hit the the evil snowmen with snowballs, but spare the friendly ones.");
         this.areaNames.add("snowman");
         if (snowmanBlocks.isEmpty()) {
@@ -62,9 +64,14 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     protected void onEnable() {
-        if (getFirstArea().getRaw() != null) {
-            if (getFirstArea().getRaw().get("time") instanceof Number num) {
+        if (configuration.getSettings() != null) {
+            if (configuration.getSettings().get("time") instanceof Number num) {
                 int value = num.intValue();
                 if (value < 0) {
                     debugLine("time is negative");
@@ -72,13 +79,13 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
                     this.gameTime = Duration.ofSeconds(value);
                 }
             }
-            if (getFirstArea().getRaw().get("totalMobs") instanceof Number num) {
+            if (configuration.getSettings().get("totalMobs") instanceof Number num) {
                 this.totalMobs = num.intValue();
                 if (totalMobs < 1) {
                     debugLine("totalMobs = " + totalMobs);
                 }
             }
-            if (getFirstArea().getRaw().get("mobsPerWave") instanceof Number num) {
+            if (configuration.getSettings().get("mobsPerWave") instanceof Number num) {
                 this.mobsPerWave = num.intValue();
                 if (mobsPerWave < 1) {
                     debugLine("mobsPerWave = " + mobsPerWave);
@@ -140,7 +147,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
             return State.IDLE;
         }
         if (saveTag.score >= saveTag.total) {
-            Session session = festival.sessionOf(player);
+            Session session = plugin.getSessions().of(player);
             boolean perfectRound = saveTag.score >= saveTag.total;
             if (perfectRound) {
                 perfect(player);
@@ -181,7 +188,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
             clearMobs();
             spawnMobs();
             progress(player);
-            player.sendActionBar(booth.format("Way to go!"));
+            player.sendActionBar(theme.format("Way to go!"));
         }
         return null;
     }
@@ -192,7 +199,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
         if (!(event.getEntity() instanceof Snowball snowball)) return;
         snowball.remove();
         if (!(snowball.getShooter() instanceof Player player)) return;
-        if (!isCurrentPlayer(player)) return;
+        if (!isParticipant(player)) return;
         if (!(event.getHitEntity() instanceof Snowman snowman)) return;
         if (!saveTag.snowmen.contains(snowman.getUniqueId())) return;
         if (snowman.isDerp()) {
@@ -235,7 +242,7 @@ public final class ShootSnowmenAttraction extends Attraction<ShootSnowmenAttract
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected int score;

@@ -1,15 +1,17 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -21,22 +23,23 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerInteractEvent;
 import static net.kyori.adventure.text.Component.text;
 
-public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag> {
+public final class MemoryAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final int REVEAL_TICKS = 30;
     protected Duration playTime;
     protected List<Vec3i> memoryBlocks = new ArrayList<>();
     protected int secondsLeft;
 
     protected MemoryAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
+        super(config, "Memory Game");
         Set<Vec3i> memoryBlockSet = new HashSet<>();
-        for (Area cuboid : allAreas) {
-            if ("block".equals(cuboid.name)) {
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid cuboid = entry.getValue();
+            if ("block".equals(entry.getKey())) {
                 memoryBlockSet.addAll(cuboid.enumerate());
             }
         }
         memoryBlocks.addAll(memoryBlockSet);
-        this.displayName = booth.format("Memory Game");
         this.description = text("Find matching pairs of blocks. Reveal 2 blocks at a time.");
         this.playTime = Duration.ofSeconds(memoryBlocks.size() * 5);
         this.areaNames.add("block");
@@ -46,6 +49,11 @@ public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag>
         if (memoryBlocks.size() % 2 != 0) {
             debugLine("Memory blocks not even");
         }
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -115,7 +123,7 @@ public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag>
                 if (saveTag.complete) {
                     perfect(player);
                     prepareReward(player, true);
-                    festival.sessionOf(player).setCooldown(this, completionCooldown);
+                    plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                 } else {
                     changeState(State.PICK_1);
                 }
@@ -267,7 +275,7 @@ public final class MemoryAttraction extends Attraction<MemoryAttraction.SaveTag>
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected List<Material> hiddenBlocks = new ArrayList<>();

@@ -1,7 +1,6 @@
 package com.cavetale.festival.attraction;
-
-import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.core.event.player.PluginPlayerEvent.Detail;
+import com.cavetale.core.event.player.PluginPlayerEvent;
 import com.cavetale.mytems.item.music.Beat;
 import com.cavetale.mytems.item.music.Melody;
 import com.cavetale.mytems.item.music.MelodyBuilder;
@@ -12,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -19,8 +19,8 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.title.Title;
 import org.bukkit.Instrument;
 import org.bukkit.Location;
-import org.bukkit.Note;
 import org.bukkit.Note.Tone;
+import org.bukkit.Note;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.empty;
 import static net.kyori.adventure.text.Component.join;
@@ -29,15 +29,15 @@ import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.JoinConfiguration.separator;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttraction.SaveTag> {
+public final class RepeatMelodyAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected Melody melody;
     @Setter protected Instrument instrument = Instrument.PIANO;
     @Setter protected int octave = 0;
 
     protected RepeatMelodyAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
+        super(config, "Play the Melody");
         this.doesRequireInstrument = true;
-        this.displayName = booth.format("Play the Melody");
         this.description = text("I'll give you a melody and you're gonna repeat it. It gets harder every round.");
         Random random2 = new Random(npcVector != null ? npcVector.hashCode() : mainArea.hashCode());
         octave = random2.nextInt(2);
@@ -66,6 +66,11 @@ public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttract
     public void set(Instrument theInstr, int theOctave) {
         this.instrument = theInstr;
         this.octave = theOctave;
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -193,7 +198,7 @@ public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttract
                     perfect(player);
                     melody.play(plugin, player);
                     prepareReward(player, true);
-                    festival.sessionOf(player).setCooldown(this, completionCooldown);
+                    plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                     changeState(State.IDLE);
                     return;
                 } else {
@@ -250,7 +255,7 @@ public final class RepeatMelodyAttraction extends Attraction<RepeatMelodyAttract
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected int noteIndex;
         protected int maxNoteIndex;

@@ -1,35 +1,31 @@
 package com.cavetale.festival;
 
-import com.cavetale.area.struct.Area;
-import com.cavetale.area.struct.AreasFile;
 import com.cavetale.core.command.AbstractCommand;
 import com.cavetale.core.command.CommandArgCompleter;
-import com.cavetale.core.command.CommandContext;
 import com.cavetale.core.command.CommandNode;
 import com.cavetale.core.command.CommandWarn;
 import com.cavetale.core.playercache.PlayerCache;
 import com.cavetale.core.struct.Cuboid;
-import com.cavetale.core.struct.Vec3i;
+import com.cavetale.core.util.Json;
 import com.cavetale.festival.attraction.Attraction;
+import com.cavetale.festival.attraction.AttractionConfiguration;
 import com.cavetale.festival.attraction.AttractionType;
 import com.cavetale.festival.attraction.Music;
 import com.cavetale.festival.session.Session;
 import com.cavetale.mytems.item.axis.CuboidOutline;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
+import org.bukkit.World;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.text;
-import static net.kyori.adventure.text.Component.textOfChildren;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
 public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> {
@@ -49,11 +45,9 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
             .senderCaller(this::music);
         rootNode.addChild("count").arguments("<world>")
             .description("Count attractions")
-            .completers(CommandArgCompleter.supplyList(() -> List.copyOf(plugin.festivalMap.keySet())))
             .senderCaller(this::count);
         rootNode.addChild("countcompletions").arguments("<world>")
             .description("Count total completions")
-            .completers(CommandArgCompleter.supplyList(() -> List.copyOf(plugin.festivalMap.keySet())))
             .senderCaller(this::countCompletions);
         CommandNode sessionNode = rootNode.addChild("session")
             .description("Session subcommands");
@@ -71,61 +65,54 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         CommandNode attractionNode = rootNode.addChild("attraction")
             .description("Attraction subcommands");
         attractionNode.addChild("create").arguments("<type> <name>")
-            .completers(CommandArgCompleter.enumLowerList(AttractionType.class),
-                        CommandArgCompleter.supplyList(() -> {
-                                List<String> result = new ArrayList<>();
-                                for (Festival festival : plugin.getFestivalMap().values()) {
-                                    for (Attraction attraction : festival.getAttractionsMap().values()) {
-                                        result.add(attraction.getName());
-                                    }
-                                }
-                                return result;
-                            }))
-            .description("Create attraction")
-            .playerCaller(this::attractionCreate);
-        attractionNode.addChild("set").arguments("<type>")
             .completers(CommandArgCompleter.enumLowerList(AttractionType.class))
-            .description("Set attraction of area")
-            .playerCaller(this::attractionSet);
-        attractionNode.addChild("addarea").arguments("<area>")
-            .completers(this::completeAreaNames)
-            .description("Add attraction area")
-            .playerCaller(this::attractionAddArea);
-        attractionNode.addChild("removearea").arguments("<area>")
-            .completers(this::completePresentAreaNames)
-            .description("remove attraction area")
-            .playerCaller(this::attractionRemoveArea);
-        attractionNode.addChild("setvalue").arguments("<key> <value>")
-            .completers(this::completeAttractionKeys)
-            .description("Set an attraction value")
-            .playerCaller(this::attractionSetValue);
-        attractionNode.addChild("resetvalue").arguments("<key>")
-            .completers(this::completeExistingAttractionKeys)
-            .description("Reset an attraction value")
-            .playerCaller(this::attractionResetValue);
-        attractionNode.addChild("highlight").denyTabCompletion()
-            .description("Highlight all areas")
-            .playerCaller(this::attractionHighlight);
+            .playerCaller(this::attractionCreate);
+        for (final String action : List.of("set", "add", "remove", "setvalue", "resetvalue")) {
+            attractionNode.addChild(action).arguments(switch (action) {
+                case "remove" -> "<name> <area> [1-based index]";
+                case "setvalue" -> "<name> <key> <value>";
+                default -> "<name> <key>";
+            }).playerCaller((player, args) -> editAttraction(player, action, args));
+        }
+        attractionNode.addChild("debug").arguments("[name]")
+            .description("Show attraction debug lines")
+            .completers(CommandArgCompleter.supplyList(() -> plugin.getAttractions().getLoadedAttractions().stream()
+                                                      .map(Attraction::getName).sorted().toList()))
+            .senderCaller(this::attractionDebug);
+        attractionNode.addChild("highlight").arguments("<name>").playerCaller(this::highlight);
     }
 
-    private int requireInt(String arg) {
-        try {
-            return Integer.parseInt(arg);
-        } catch (NumberFormatException nfe) {
-            throw new CommandWarn("Number expected: " + arg);
+    private boolean attractionDebug(final CommandSender sender, final String[] args) {
+        if (args.length > 1) return false;
+        final List<Attraction> attractions;
+        if (args.length == 1) {
+            final Attraction attraction = plugin.getAttraction(args[0]);
+            if (attraction == null) throw new CommandWarn("Unknown loaded attraction: " + args[0]);
+            attractions = List.of(attraction);
+        } else {
+            attractions = plugin.getAttractions().getLoadedAttractions().stream()
+                .sorted(Comparator.comparing(Attraction::getName)).toList();
         }
+        boolean found = false;
+        for (final Attraction attraction : attractions) {
+            if (attraction.getDebugLines().isEmpty()) continue;
+            sender.sendMessage(text(attraction.getName(), YELLOW));
+            attraction.getDebugLines().forEach(sender::sendMessage);
+            found = true;
+        }
+        if (!found) sender.sendMessage(text("No attraction debug lines.", GRAY));
+        return true;
     }
 
     protected boolean reload(CommandSender sender, String[] args) {
         if (args.length != 0) return false;
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        sender.sendMessage(text("Players and attractions reloaded", YELLOW));
+        plugin.getAttractions().reload();
+        sender.sendMessage(text("Attractions reloaded", YELLOW));
         return true;
     }
 
     protected boolean music(CommandSender sender, String[] args) {
-        if (args.length > 3) return false;
+        if (args.length < 1 || args.length > 2) return false;
         Music music;
         Player target;
         try {
@@ -151,11 +138,11 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     protected boolean count(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.festivalMap.get(args[0]);
-        if (festival == null) throw new CommandWarn("World not found: " + args[0]);
+        final World world = Bukkit.getWorld(args[0]);
+        if (world == null) throw new CommandWarn("World not found: " + args[0]);
         Map<AttractionType, Integer> counts = new EnumMap<>(AttractionType.class);
         for (AttractionType type : AttractionType.values()) counts.put(type, 0);
-        for (Attraction attraction : festival.getAttractionsMap().values()) {
+        for (Attraction attraction : plugin.getAttractionsIn(world)) {
             AttractionType type = AttractionType.of(attraction);
             counts.put(type, counts.get(type) + 1);
         }
@@ -164,18 +151,18 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
         for (AttractionType type : rankings) {
             sender.sendMessage(counts.get(type) + " " + type);
         }
-        sender.sendMessage(festival.getAttractionsMap().size() + " Total");
+        sender.sendMessage(plugin.getAttractionsIn(world).size() + " Total");
         return true;
     }
 
     protected boolean countCompletions(CommandSender sender, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.festivalMap.get(args[0]);
-        if (festival == null) throw new CommandWarn("World not found: " + args[0]);
-        final int total = festival.getAttractionsMap().size();
+        final World world = Bukkit.getWorld(args[0]);
+        if (world == null) throw new CommandWarn("World not found: " + args[0]);
+        final int total = plugin.getAttractionsIn(world).size();
         List<Session> completedSessions = new ArrayList<>();
-        for (Session session : Session.loadAll(festival)) {
-            if (session.isTotallyCompleted() || session.getTag().getUniquesGot().size() >= total) {
+        for (Session session : Session.loadAll(plugin)) {
+            if (total > 0 && plugin.getAttractionsIn(world).stream().allMatch(session::isUniqueLocked)) {
                 completedSessions.add(session);
             }
         }
@@ -188,24 +175,20 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private boolean sessionReset(Player player, String[] args) {
         if (args.length != 1) return false;
-        final Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("No festival here!");
         final PlayerCache target = PlayerCache.require(args[0]);
-        final Session session = festival.sessions.of(target);
+        final Session session = plugin.getSessions().of(target);
         session.reset();
         session.save();
-        festival.sessions.clear(target.uuid);
+        plugin.getSessions().clear(target.uuid);
         player.sendMessage(text("Session reset: " + target.getName(), YELLOW));
         return true;
     }
 
     private boolean sessionComplete(Player player, String[] args) {
         if (args.length != 1) return false;
-        final Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("No festival here!");
         final PlayerCache target = PlayerCache.require(args[0]);
-        final Session session = festival.sessions.of(target);
-        for (Attraction<?> attraction : festival.getAttractions()) {
+        final Session session = plugin.getSessions().of(target);
+        for (Attraction attraction : plugin.getAttractionsIn(player.getWorld())) {
             session.lockUnique(attraction);
         }
         session.save();
@@ -215,297 +198,106 @@ public final class FestivalAdminCommand extends AbstractCommand<FestivalPlugin> 
 
     private boolean sessionClearCooldowns(Player player, String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("No festival here!");
         PlayerCache target = PlayerCache.require(args[0]);
-        Session session = festival.sessions.of(target);
+        Session session = plugin.getSessions().of(target);
         session.getTag().getCooldowns().clear();
         session.save();
         player.sendMessage(text("Cooldowns cleared: " + target.getName(), YELLOW));
         return true;
     }
 
-    private boolean attractionCreate(Player player, String[] args) {
+    private File configFile(final String name) {
+        if (!name.matches("[A-Za-z0-9_-]+")) throw new CommandWarn("Invalid attraction name");
+        return new File(plugin.getAttractionsFolder(), name + ".json");
+    }
+
+    private boolean attractionCreate(final Player player, final String[] args) {
         if (args.length != 2) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
-        Cuboid cuboid = Cuboid.requireSelectionOf(player);
-        // for (Attraction attraction : festival.getAttractionsMap().values()) {
-        //     if (attraction.getMainArea().overlaps(cuboid)) {
-        //         throw new CommandWarn("Selection overlaps with attraction " + attraction.getName());
-        //     }
-        // }
-        AttractionType type = CommandArgCompleter.requireEnum(AttractionType.class, args[0]);
-        String name = args[1];
-        if (festival.getAttractionsMap().containsKey(name)) {
-            throw new CommandWarn("Area already exists: " + name);
+        final File file = configFile(args[1]);
+        if (file.exists() || plugin.getAttractions().hasConfiguration(args[1])) throw new CommandWarn("Name already in use");
+        final AttractionConfiguration config = new AttractionConfiguration();
+        try {
+            config.setType(AttractionType.valueOf(args[0].toUpperCase(java.util.Locale.ROOT)));
+        } catch (IllegalArgumentException e) {
+            throw new CommandWarn("Unknown attraction type");
         }
-        List<Area> areaList = new ArrayList<>();
-        areaList.add(new Area(cuboid.getMin(), cuboid.getMax(), type.name().toLowerCase(), null));
-        AreasFile areasFile = festival.loadAreasFile();
-        areasFile.getAreas().put(name, areaList);
-        areasFile.save(festival.getWorld(), festival.getAreasFileName());
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        player.sendMessage(text("Attraction created: " + type + ", " + name + ", " + cuboid, GREEN));
+        config.setName(args[1]);
+        config.setWorld(player.getWorld().getName());
+        config.setMain(Cuboid.requireSelectionOf(player));
+        plugin.getAttractions().storeConfiguration(config);
+        player.sendMessage(text("Created " + config.getName(), YELLOW));
         return true;
     }
 
-    private boolean attractionSet(Player player, String[] args) {
+    private boolean editAttraction(final Player player, final String action, final String[] args) {
+        if (args.length < 2) return false;
+        final File file = configFile(args[0]);
+        if (!file.isFile()) throw new CommandWarn("Missing attraction file");
+        final AttractionConfiguration config = Json.load(file, AttractionConfiguration.class);
+        if (!args[0].equals(config.getName()) || !player.getWorld().getName().equals(config.getWorld())) {
+            throw new CommandWarn("Attraction name or world does not match");
+        }
+        final String key = args[1];
+        switch (action) {
+        case "set", "add" -> {
+            if (args.length != 2) return false;
+            final Cuboid area = Cuboid.requireSelectionOf(player);
+            if (key.equals("main")) {
+                if (action.equals("add")) throw new CommandWarn("Use set for the main area");
+                config.setMain(area);
+            } else if (action.equals("set")) {
+                if (config.getAreaLists().containsKey(key)) throw new CommandWarn("Key is an area list");
+                config.getAreas().put(key, area);
+            } else {
+                if (config.getAreas().containsKey(key)) throw new CommandWarn("Key is a single area");
+                config.getAreaLists().computeIfAbsent(key, k -> new ArrayList<>()).add(area);
+            }
+        }
+        case "remove" -> {
+            if (args.length == 3) {
+                final int index = CommandArgCompleter.requireInt(args[2]) - 1;
+                final List<Cuboid> list = config.getAreaLists().get(key);
+                if (list == null || index < 0 || index >= list.size()) throw new CommandWarn("Invalid list index");
+                list.remove(index);
+                if (list.isEmpty()) config.getAreaLists().remove(key);
+            } else if (args.length != 2) {
+                return false;
+            } else if (config.getAreas().remove(key) == null && config.getAreaLists().remove(key) == null) {
+                throw new CommandWarn("Unknown area");
+            }
+        }
+        case "setvalue" -> {
+            if (args.length < 3) return false;
+            final String value = String.join(" ", Arrays.copyOfRange(args, 2, args.length));
+            final Attraction attraction = plugin.getAttraction(args[0]);
+            config.getSettings().put(key, attraction != null && attraction.getIntKeys().contains(key)
+                                     ? CommandArgCompleter.requireInt(value) : value);
+        }
+        case "resetvalue" -> {
+            if (args.length != 2) return false;
+            config.getSettings().remove(key);
+        }
+        default -> throw new IllegalArgumentException(action);
+        }
+        plugin.getAttractions().storeConfiguration(config);
+        player.sendMessage(text("Updated " + config.getName(), YELLOW));
+        return true;
+    }
+
+    private boolean highlight(final Player player, final String[] args) {
         if (args.length != 1) return false;
-        Festival festival = plugin.getFestival(player.getWorld());
-        if (festival == null) throw new CommandWarn("There is no festival here!");
-        String areaName = null;
-        List<Area> areaList = null;
-        AreasFile areasFile = festival.loadAreasFile();
-        final Vec3i playerVector = Vec3i.of(player.getLocation());
-        for (String name : areasFile.getAreas().keySet()) {
-            List<Area> list = areasFile.getAreas().get(name);
-            if (list.isEmpty()) continue;
-            if (list.get(0).contains(playerVector)) {
-                areaName = name;
-                areaList = list;
-                break;
-            }
-        }
-        if (areaName == null || areaList == null) {
-            throw new CommandWarn("There is no area list here: " + playerVector);
-        }
-        AttractionType type = CommandArgCompleter.requireEnum(AttractionType.class, args[0]);
-        Area mainArea = areaList.get(0);
-        String oldType = mainArea.getName();
-        areaList.set(0, mainArea.withName(type.name().toLowerCase()));
-        areasFile.save(festival.getWorld(), festival.getAreasFileName());
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        player.sendMessage(text("Attraction set: " + oldType + " => " + type + " in area " + areaName, GREEN));
-        return true;
-    }
-
-    private List<String> completeAreaNames(CommandContext context, CommandNode node, String arg) {
-        if (!context.isPlayer()) return List.of();
-        final List<String> result = new ArrayList<>();
-        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
-            for (String name : attraction.getAreaNames()) {
-                if (name.contains(arg.toLowerCase())) result.add(name);
-            }
-        }
-        return result;
-    }
-
-    private List<String> completePresentAreaNames(CommandContext context, CommandNode node, String arg) {
-        if (!context.isPlayer()) return List.of();
-        final List<String> result = new ArrayList<>();
-        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
-            boolean first = true;
-            for (var area : attraction.getAllAreas()) {
-                if (first) {
-                    first = false;
-                    continue;
-                }
-                String name = area.getName();
-                if (area == null) continue;
-                if (name.contains(arg.toLowerCase())) result.add(name);
-            }
-        }
-        return result;
-    }
-
-    private Attraction<?> requireSingleAttractionAt(Location location) {
-        final Festival festival = plugin.getFestival(location.getWorld());
-        if (festival == null) {
-            throw new CommandWarn("There is no festival here!");
-        }
-        final List<Attraction<?>> attractions = festival.getAttractionsAt(location);
-        if (attractions.isEmpty()) {
-            throw new CommandWarn("There is no attraction here");
-        }
-        if (attractions.size() > 1) {
-            throw new CommandWarn("More than one attraction here!");
-        }
-        return attractions.get(0);
-    }
-
-    private boolean attractionAddArea(Player player, String[] args) {
-        if (args.length != 1) return false;
-        final Cuboid cuboid = Cuboid.requireSelectionOf(player);
-        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
-        if (!attraction.getMainArea().contains(cuboid)) {
-            throw new CommandWarn("Selection is not contained in main area: " + attraction.getName());
-        }
-        final String name = args[0];
-        if (!attraction.getAreaNames().contains(name)) {
-            throw new CommandWarn("Attraction does not require area named " + name + " (" + attraction.getType() + ")");
-        }
-        final Festival festival = attraction.getFestival();
-        final AreasFile areasFile = festival.loadAreasFile();
-        final List<Area> areaList = areasFile.getAreas().get(attraction.getName());
-        assert areaList != null;
-        final Area area = new Area(cuboid.getMin(), cuboid.getMax(), name, null);
-        areaList.add(area);
-        areasFile.save(festival.getWorld(), festival.getAreasFileName());
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        player.sendMessage(text("Area added: " + area, GREEN));
-        final CuboidOutline outline = new CuboidOutline(player.getWorld(), cuboid);
-        outline.showOnlyTo(player);
-        outline.spawn();
-        outline.removeLater(100L);
-        outline.glow(Color.GREEN);
-        return true;
-    }
-
-    private boolean attractionRemoveArea(Player player, String[] args) {
-        if (args.length != 1) return false;
-        Cuboid cuboid = Cuboid.requireSelectionOf(player);
-        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
-        if (!attraction.getMainArea().contains(cuboid)) {
-            throw new CommandWarn("Selection is not contained in main area: " + attraction.getName());
-        }
-        final String name = args[0];
-        final Festival festival = plugin.getFestival(player.getWorld());
-        final AreasFile areasFile = festival.loadAreasFile();
-        final List<Area> areaList = areasFile.getAreas().get(attraction.getName());
-        assert areaList != null;
-        Area removedArea = null;
-        for (int i = areaList.size() - 1; i > 0; i -= 1) {
-            Area area = areaList.get(i);
-            if (name.equals(area.getName())) {
-                removedArea = areaList.remove(i);
-                break;
-            }
-        }
-        if (removedArea == null) throw new CommandWarn("Area not found: " + name);
-        areasFile.save(festival.getWorld(), festival.getAreasFileName());
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        player.sendMessage(text("Area removed: " + removedArea, YELLOW));
-        removedArea.highlight(player.getWorld(), loc -> player.spawnParticle(Particle.DUST,
-                                                                             loc, 1, 0.0, 0.0, 0.0, 0.0,
-                                                                             new Particle.DustOptions(Color.RED, 1.0f)));
-        return true;
-    }
-
-    private List<String> completeAttractionKeys(CommandContext context, CommandNode node, String arg) {
-        if (!context.isPlayer()) return List.of();
-        final List<String> result = new ArrayList<>();
-        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
-            for (String key : attraction.getStringKeys()) {
-                if (key.contains(arg.toLowerCase())) result.add(key);
-            }
-            for (String key : attraction.getIntKeys()) {
-                if (key.contains(arg.toLowerCase())) result.add(key);
-            }
-        }
-        return result;
-    }
-
-    private boolean attractionSetValue(Player player, String[] args) {
-        if (args.length < 1) return false;
-        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
-        String key = args[0];
-        if (args.length < 2) {
-            Object value = attraction.getFirstArea().getRaw() != null
-                ? attraction.getFirstArea().getRaw().get(key)
-                : null;
-            player.sendMessage(textOfChildren(text("Value of ", AQUA),
-                                              text(key, YELLOW),
-                                              text(" is ", AQUA),
-                                              text("" + value, YELLOW)));
-            return true;
-        }
-        final String value = String.join(" ", Arrays.copyOfRange(args, 1, args.length));
-        final Festival festival = attraction.getFestival();
-        final AreasFile areasFile = festival.loadAreasFile();
-        final List<Area> areas = areasFile.find(attraction.getName());
-        Area area = areas.get(0);
-        if (area.getRaw() == null) {
-            area = area.withRaw(new HashMap<>());
-            areas.set(0, area);
-        }
-        if (attraction.getStringKeys().contains(key)) {
-            area.getRaw().put(key, value);
-            areasFile.save(festival.getWorld(), festival.getAreasFileName());
-            player.sendMessage(textOfChildren(text("Value of ", AQUA),
-                                              text(key, YELLOW),
-                                              text(" set to ", AQUA),
-                                              text(value, YELLOW)));
-        } else if (attraction.getIntKeys().contains(key)) {
-            final int intValue = CommandArgCompleter.requireInt(value);
-            area.getRaw().put(key, intValue);
-            areasFile.save(festival.getWorld(), festival.getAreasFileName());
-            player.sendMessage(textOfChildren(text("Value of ", AQUA),
-                                              text(key, YELLOW),
-                                              text(" set to ", AQUA),
-                                              text(intValue, YELLOW)));
-        } else {
-            throw new CommandWarn("Invalid key: " + key);
-        }
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        return true;
-    }
-
-    private List<String> completeExistingAttractionKeys(CommandContext context, CommandNode node, String arg) {
-        if (!context.isPlayer()) return List.of();
-        final List<String> result = new ArrayList<>();
-        for (Attraction<?> attraction : plugin.getAttractionsAt(context.player.getLocation())) {
-            final Area area = attraction.getFirstArea();
-            if (area.getRaw() == null) return List.of();
-            for (String key : area.getRaw().keySet()) {
-                if (key.contains(arg.toLowerCase())) result.add(key);
-            }
-        }
-        return result;
-    }
-
-    private boolean attractionResetValue(Player player, String[] args) {
-        if (args.length != 1) return false;
-        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
-        if (attraction == null) throw new CommandWarn("There is no attraction here");
-        final String key = args[0];
-        final Festival festival = attraction.getFestival();
-        final AreasFile areasFile = festival.loadAreasFile();
-        final List<Area> areas = areasFile.find(attraction.getName());
-        final Area area = areas.get(0);
-        if (area.getRaw() == null) {
-            throw new CommandWarn("There are no values set");
-        }
-        final Object value = area.getRaw().remove(key);
-        if (value == null) {
-            throw new CommandWarn("Does not set " + key);
-        }
-        areasFile.save(festival.getWorld(), festival.getAreasFileName());
-        player.sendMessage(textOfChildren(text("Value of ", YELLOW),
-                                          text(key, GRAY),
-                                          text(" was reset: ", YELLOW),
-                                          text("" + value, RED)));
-        plugin.clearFestivals();
-        plugin.loadFestivals();
-        return true;
-    }
-
-    private void attractionHighlight(Player player) {
-        final Attraction<?> attraction = requireSingleAttractionAt(player.getLocation());
-        if (attraction == null) throw new CommandWarn("There is no attraction here");
-        int count = 0;
-        for (Area area : attraction.getAllAreas()) {
-            final CuboidOutline outline = new CuboidOutline(player.getWorld(), area.toCuboid());
+        final Attraction attraction = plugin.getAttraction(player.getWorld(), args[0]);
+        if (attraction == null) throw new CommandWarn("Unknown attraction");
+        final AttractionConfiguration config = attraction.getConfiguration();
+        final List<Cuboid> areas = new ArrayList<>(config.getAreas().values());
+        areas.add(config.getMain());
+        config.getAreaLists().values().forEach(areas::addAll);
+        for (final Cuboid area : areas) {
+            final CuboidOutline outline = new CuboidOutline(player.getWorld(), area);
             outline.showOnlyTo(player);
             outline.spawn();
             outline.removeLater(100L);
-            final Color color = switch (area.getName()) {
-            case null -> Color.YELLOW;
-            case "npc" -> Color.BLUE;
-            case "chest" -> Color.ORANGE;
-            case "pumpkin" -> Color.ORANGE;
-            case "pet" -> Color.ORANGE;
-            case "target" -> Color.ORANGE;
-            default -> Color.GREEN;
-            };
-            outline.glow(color);
-            count += 1;
         }
-        player.sendMessage(text("Highlighting " + count + " areas of attraction " + attraction.getName(), YELLOW));
+        return true;
     }
 }

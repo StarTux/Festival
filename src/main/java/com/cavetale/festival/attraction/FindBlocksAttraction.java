@@ -1,17 +1,19 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaItems;
+import com.cavetale.core.struct.Cuboid;
 import com.cavetale.core.struct.Vec3i;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Axis;
@@ -34,7 +36,8 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import static net.kyori.adventure.text.Component.text;
 import static net.kyori.adventure.text.format.NamedTextColor.*;
 
-public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.SaveTag> {
+public final class FindBlocksAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     public static final List<BlockFace> HORIZONTAL_FACES = List.of(BlockFace.NORTH,
                                                                    BlockFace.EAST,
                                                                    BlockFace.SOUTH,
@@ -46,13 +49,13 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
     @Setter private Function<Block, BlockData> blockDataFunction;
 
     protected FindBlocksAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if ("blocks".equals(area.name)) {
+        super(config, "Hidden Blocks");
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("blocks".equals(entry.getKey())) {
                 originBlockSet.addAll(area.enumerate());
             }
         }
-        this.displayName = text("Hidden Blocks", DARK_RED);
         this.description = text("My place is haunted!"
                                 + " a ghost keeps placing and rearranging blocks."
                                 + " Can you find them all?");
@@ -60,6 +63,11 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         if (this.originBlockSet.isEmpty()) {
             debugLine("No block areas");
         }
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -293,7 +301,7 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         if (saveTag.blockList.isEmpty()) {
             victory(player);
             prepareReward(player, true);
-            festival.sessionOf(player).setCooldown(this, completionCooldown);
+            plugin.getSessions().of(player).setCooldown(this, completionCooldown);
             return State.IDLE;
         }
         long now = System.currentTimeMillis();
@@ -338,7 +346,7 @@ public final class FindBlocksAttraction extends Attraction<FindBlocksAttraction.
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected List<Vec3i> blockList;
         protected List<String> blockDataList;

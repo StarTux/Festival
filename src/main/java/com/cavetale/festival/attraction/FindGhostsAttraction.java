@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaEffects;
@@ -11,7 +10,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import lombok.Getter;
 import lombok.Setter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.Bukkit;
@@ -30,20 +31,21 @@ import org.bukkit.util.BoundingBox;
 import static com.cavetale.mytems.util.Collision.collidesWithBlock;
 import static net.kyori.adventure.text.Component.text;
 
-public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.SaveTag> {
+public final class FindGhostsAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     @Setter protected Duration searchTime = Duration.ofSeconds(180);
     protected final List<Cuboid> ghostAreas = new ArrayList<>();
     protected int secondsLeft;
 
     protected FindGhostsAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        this.displayName = booth.format("Ghostbusters");
+        super(config, "Ghostbusters");
         this.description = text("Help! My house is haunted."
                                 + " I can't even see them but they are scary."
                                 + " Can you get rid of them all?");
-        for (Area area : allAreas) {
-            if ("ghost".equals(area.name)) {
-                ghostAreas.add(area.toCuboid());
+        for (final Map.Entry<String, Cuboid> entry : configuration.namedAreas()) {
+            final Cuboid area = entry.getValue();
+            if ("ghost".equals(entry.getKey())) {
+                ghostAreas.add(area);
             }
         }
         this.areaNames.add("ghost");
@@ -52,6 +54,11 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
         } else if (ghostAreas.size() < 7) {
             debugLine("Only " + ghostAreas.size() + "/7 ghost areas");
         }
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -122,11 +129,11 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
         if (saveTag.ghostUuids.isEmpty()) {
             victory(player);
             prepareReward(player, true);
-            festival.sessionOf(player).setCooldown(this, completionCooldown);
+            plugin.getSessions().of(player).setCooldown(this, completionCooldown);
             changeState(State.IDLE);
         } else {
             int ghostCount = saveTag.totalGhosts - saveTag.ghostUuids.size();
-            player.sendActionBar(booth.format("Ghost " + ghostCount + " discovered!"));
+            player.sendActionBar(theme.format("Ghost " + ghostCount + " discovered!"));
             progress(player);
         }
     }
@@ -216,7 +223,7 @@ public final class FindGhostsAttraction extends Attraction<FindGhostsAttraction.
         }
     }
 
-    protected static final class SaveTag extends Attraction.SaveTag {
+    protected static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected List<UUID> ghostUuids = new ArrayList<>();
         protected int totalGhosts;

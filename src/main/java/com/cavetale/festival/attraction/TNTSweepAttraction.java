@@ -1,6 +1,5 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.GuiOverlay;
@@ -13,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextColor;
@@ -32,7 +32,8 @@ import static net.kyori.adventure.text.format.TextDecoration.*;
 /**
  * Dummy attraction for the purpose of copy and paste.
  */
-public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.SaveTag> {
+public final class TNTSweepAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 5);
     protected long secondsLeft;
     protected int width = 9;
@@ -46,19 +47,19 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
     private static final int MARKED_TNT = -5;
 
     protected TNTSweepAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-        }
-        this.displayName = booth.format("TNT Sweep");
+        super(config, "TNT Sweep");
         this.description = text("Reveal slots but avoid the hidden TNT. Numbers indicate how much TNT is adjacent.");
         this.intKeys.add("bombs");
     }
 
     @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
+    }
+
+    @Override
     protected void onEnable() {
-        Map<String, Object> raw = getFirstArea().getRaw();
-        if (raw == null) raw = Map.of();
+        final Map<String, Object> raw = configuration.getSettings();
         if (raw.get("bombs") instanceof Number number) {
             bombs = number.intValue();
         }
@@ -178,7 +179,7 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected long endStarted;
@@ -193,7 +194,7 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
         if (saveTag.state == State.PLAY) {
             assert currentPlayer != null;
             openGui(player);
-            if (!isCurrentPlayer(player)) {
+            if (!isParticipant(player)) {
                 player.sendMessage(textOfChildren(text("Spectating ", GREEN), currentPlayer.displayName()));
             }
         } else {
@@ -203,7 +204,7 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
 
     private void openAll() {
         for (Player player : world.getPlayers()) {
-            if (isCurrentPlayer(player)) {
+            if (isParticipant(player)) {
                 openGui(player);
             } else {
                 Gui gui = Gui.of(player);
@@ -272,7 +273,7 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
                 final int x = cx;
                 final int y = cy;
                 gui.setItem(x, y, icon, click -> {
-                        if (!isCurrentPlayer(player) || saveTag.state != State.PLAY) {
+                        if (!isParticipant(player) || saveTag.state != State.PLAY) {
                             return;
                         }
                         if (click.isLeftClick()) {
@@ -281,7 +282,7 @@ public final class TNTSweepAttraction extends Attraction<TNTSweepAttraction.Save
                                 if (saveTag.state == State.PLAY && saveTag.score == saveTag.total) {
                                     perfect(player);
                                     prepareReward(player, true);
-                                    festival.sessionOf(player).setCooldown(this, completionCooldown);
+                                    plugin.getSessions().of(player).setCooldown(this, completionCooldown);
                                     changeState(State.WIN);
                                     openAll();
                                 }

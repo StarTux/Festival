@@ -1,11 +1,11 @@
 package com.cavetale.festival.attraction;
 
-import com.cavetale.area.struct.Area;
 import com.cavetale.core.event.hud.PlayerHudEvent;
 import com.cavetale.core.event.hud.PlayerHudPriority;
 import com.cavetale.core.font.VanillaItems;
 import com.cavetale.festival.session.Session;
 import java.time.Duration;
+import lombok.Getter;
 import net.kyori.adventure.bossbar.BossBar;
 import org.bukkit.entity.Player;
 import static net.kyori.adventure.text.Component.empty;
@@ -18,17 +18,19 @@ import static net.kyori.adventure.title.Title.title;
 /**
  * Dummy attraction for the purpose of copy and paste.
  */
-public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
+public final class NullAttraction extends SinglePlayerAttraction {
+    @Getter private SaveTag saveTag;
     protected static final Duration GAME_TIME = Duration.ofSeconds(60 * 3);
     protected long secondsLeft;
 
     protected NullAttraction(final AttractionConfiguration config) {
-        super(config, SaveTag.class, SaveTag::new);
-        for (Area area : allAreas) {
-            if (area.name == null) continue;
-        }
-        this.displayName = booth.format("Null");
+        super(config, "Null");
         this.description = text("Null");
+    }
+
+    @Override
+    protected void loadSaveTag() {
+        saveTag = readSaveTag(SaveTag.class, SaveTag::new);
     }
 
     @Override
@@ -80,7 +82,7 @@ public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
         Player player = getCurrentPlayer();
         if (player == null) return State.IDLE;
         if (secondsLeft <= 0L) {
-            Session session = festival.sessionOf(player);
+            Session session = plugin.getSessions().of(player);
             boolean perfectRound = saveTag.score >= saveTag.total;
             if (perfectRound) {
                 perfect(player);
@@ -123,7 +125,7 @@ public final class NullAttraction extends Attraction<NullAttraction.SaveTag> {
         }
     }
 
-    static final class SaveTag extends Attraction.SaveTag {
+    static final class SaveTag extends SinglePlayerAttraction.SaveTag {
         protected State state = State.IDLE;
         protected long gameStarted;
         protected int score;
